@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://dwj5hbjhsrrt0"]
+
+[node name="Character" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+visible = false
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]

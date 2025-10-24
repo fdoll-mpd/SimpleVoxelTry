@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://bpgo0udxilfai"]
+
+[ext_resource type="Script" uid="uid://bbswwnx60gm78" path="res://Entities/Player/test_character.gd" id="1_21ih4"]
+[ext_resource type="Script" uid="uid://b5rjxolwdfhmc" path="res://Entities/Player/eye_camera.gd" id="2_05nuq"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_21ih4"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_05nuq"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4l37u"]
+albedo_color = Color(0.36078432, 1, 1, 1)
+
+[node name="TestCharacter" type="CharacterBody3D"]
+script = ExtResource("1_21ih4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_21ih4")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_05nuq")
+surface_material_override/0 = SubResource("StandardMaterial3D_4l37u")
+
+[node name="Head" type="Node3D" parent="."]
+
+[node name="EyeCamera" type="Camera3D" parent="Head"]
+current = true
+script = ExtResource("2_05nuq")
+
+[node name="VoxelViewer" type="VoxelViewer" parent="Head"]
+view_distance = 1024
+enabled_in_editor = true

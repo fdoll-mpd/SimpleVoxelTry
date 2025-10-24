@@ -1,0 +1,29 @@
+[gd_scene load_steps=7 format=3 uid="uid://de32hxl7oh4y8"]
+
+[ext_resource type="Script" uid="uid://8riey6gamasa" path="res://Levels/AllInOneLevel/build_world.gd" id="1_rvpqm"]
+[ext_resource type="VoxelMesherBlocky" uid="uid://c6l3pdnhmvhqp" path="res://CopyFrom/BlockLib/blocks/mesher.tres" id="2_e8bwk"]
+[ext_resource type="PackedScene" uid="uid://bpgo0udxilfai" path="res://Entities/Player/TestCharacter.tscn" id="2_img8n"]
+
+[sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_a5044"]
+
+[sub_resource type="Sky" id="Sky_rvpqm"]
+sky_material = SubResource("PhysicalSkyMaterial_a5044")
+
+[sub_resource type="Environment" id="Environment_img8n"]
+background_mode = 2
+sky = SubResource("Sky_rvpqm")
+
+[node name="AllInOne" type="Node3D"]
+script = ExtResource("1_rvpqm")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_img8n")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.70710677, -0.35355338, 0.6123724, 0, 0.8660254, 0.5, -0.70710677, -0.35355338, 0.6123724, 10, 10, 10)
+
+[node name="VoxelTerrain" type="VoxelTerrain" parent="."]
+mesher = ExtResource("2_e8bwk")
+
+[node name="TestCharacter" parent="." instance=ExtResource("2_img8n")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 40, 0)

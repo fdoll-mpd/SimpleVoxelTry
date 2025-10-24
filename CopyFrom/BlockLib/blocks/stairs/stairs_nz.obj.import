@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://c2hopote1vb14"
+path="res://.godot/imported/stairs_nz.obj-6a4805ad41fb8a9069af752a1b8a144f.mesh"
+
+[deps]
+
+files=["res://.godot/imported/stairs_nz.obj-6a4805ad41fb8a9069af752a1b8a144f.mesh"]
+
+source_file="res://CopyFrom/BlockLib/blocks/stairs/stairs_nz.obj"
+dest_files=["res://.godot/imported/stairs_nz.obj-6a4805ad41fb8a9069af752a1b8a144f.mesh", "res://.godot/imported/stairs_nz.obj-6a4805ad41fb8a9069af752a1b8a144f.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=false
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
