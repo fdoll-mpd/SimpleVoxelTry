@@ -83,7 +83,7 @@ func place_sdf_sphere(center: Vector3, radius: float, add: bool = true) -> void:
 # =========================
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	terrain.scale = Vector3(0.1, 0.1, 0.1)
+	#terrain.scale = Vector3(0.1, 0.1, 0.1)
 	
 
 	# Example blocky placements (IDs depend on your VoxelLibrary setup):
@@ -132,7 +132,7 @@ func _make_debug_ground_plane(
 	plane.size = Vector2(size, size)
 	plane_mi.mesh = plane
 	#plane_mi.rotate_x(-PI / 2.0)
-	plane_mi.position = Vector3(0, 0, 0)
+	plane_mi.position = Vector3(0, -1, 0)
 	plane_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 	var m := StandardMaterial3D.new()
@@ -147,7 +147,7 @@ func _make_debug_ground_plane(
 	# --- Outline as a thin line loop slightly above the plane ---
 	# We'll build a simple line strip rectangle using SurfaceTool.
 	var half := size * 0.5
-	var y := 0.02  # small offset to prevent z-fighting with the plane
+	var y := -1.02  # small offset to prevent z-fighting with the plane
 	var corners := [
 		Vector3(-half, y, -half),
 		Vector3( half, y, -half),

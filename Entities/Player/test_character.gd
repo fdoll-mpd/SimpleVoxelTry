@@ -32,25 +32,78 @@ var _last_toggles: String = ""
 var _terrain: VoxelTerrain
 var _vt: VoxelTool
 
+
+class Crosshair:
+	extends Control
+	var arm_len: float = 10.0     # length of each arm (px)
+	var gap: float = 4.0          # empty gap around the center (px)
+	var thickness: float = 2.0    # line thickness (px)
+	var color: Color = Color(1, 1, 1, 0.9)  # white, slightly transparent
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_preset(Control.PRESET_FULL_RECT)
+		resized.connect(_on_resized)
+		queue_redraw()
+
+	func _on_resized() -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		var c := size * 0.5
+
+		# Horizontal arms
+		draw_line(
+			Vector2(c.x - gap - arm_len, c.y),
+			Vector2(c.x - gap, c.y),
+			color, thickness, true
+		)
+		draw_line(
+			Vector2(c.x + gap, c.y),
+			Vector2(c.x + gap + arm_len, c.y),
+			color, thickness, true
+		)
+
+		# Vertical arms
+		draw_line(
+			Vector2(c.x, c.y - gap - arm_len),
+			Vector2(c.x, c.y - gap),
+			color, thickness, true
+		)
+		draw_line(
+			Vector2(c.x, c.y + gap),
+			Vector2(c.x, c.y + gap + arm_len),
+			color, thickness, true
+		)
+		
+		
+		
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_create_debug_hud()
+	
+	var layer := CanvasLayer.new()
+	add_child(layer)
+
+	var cross := Crosshair.new()
+	layer.add_child(cross)
+	
 	_terrain = get_node(voxel_terrain_path) as VoxelTerrain
 	_vt = _terrain.get_voxel_tool()
 	_vt.set_raycast_normal_enabled(true) # we want the face normal from ray hits  :contentReference[oaicite:1]{index=1}
-	for v in get_tree().get_nodes_in_group("VoxelViewers"):
-		v.view_distance *= 10.0                 # keep same world-space load radius
-		# if you set vertical ratio, you normally don't need to change it
-
-	# Terrain-wide clamp so the viewer can ask for that distance:
-	_terrain.max_view_distance *= 10
-
-	# If you have a click/brush reach:
-	#default_place_block_id = default_place_block_id  # unchanged
-	max_place_distance *= 10.0          
-
-	# If your player script has its own reach:
-	click_max_distance *= 10.0
+	#for v in get_tree().get_nodes_in_group("VoxelViewers"):
+		#v.view_distance *= 10.0                 # keep same world-space load radius
+		## if you set vertical ratio, you normally don't need to change it
+#
+	## Terrain-wide clamp so the viewer can ask for that distance:
+	#_terrain.max_view_distance *= 10
+#
+	## If you have a click/brush reach:
+	##default_place_block_id = default_place_block_id  # unchanged
+	#max_place_distance *= 10.0          
+#
+	## If your player script has its own reach:
+	#click_max_distance *= 10.0
 
 func _physics_process(delta: float) -> void:
 
@@ -85,10 +138,10 @@ func _physics_process(delta: float) -> void:
 	var direction := (eye_camera.global_transform.basis *  Vector3(input2.x, 0, input2.y)).normalized()
 		
 		# DO NOT zero velocity every frame here — breaks hover diagnostics
-		#var vertical := (
-			#Input.get_action_strength("fly_up")
-			#- Input.get_action_strength("fly_down")
-		#)
+	var vertical := (
+		Input.get_action_strength("fly_up")
+		- Input.get_action_strength("fly_down")
+	)
 
 		#var fly_dir := right * input2.x + forward * input2.y + Vector3.UP * vertical
 		
@@ -100,6 +153,7 @@ func _physics_process(delta: float) -> void:
 			#velocity = velocity.move_toward(Vector3.ZERO, AIR_BRAKE * delta)
 	if direction:
 		if flying:
+			direction.y += vertical
 			velocity = direction * speed
 		else:
 			velocity.x = direction.x * speed

@@ -17,6 +17,7 @@ sky = SubResource("Sky_rvpqm")
 directory = "res://Levels/AllInOneLevel/Save"
 
 [node name="AllInOne" type="Node3D"]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
 script = ExtResource("1_rvpqm")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
