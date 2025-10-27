@@ -394,6 +394,80 @@ func place_structure_from_ray(world_origin: Vector3, world_dir: Vector3, structu
 	print("Unknown structure type: ", structure_type)
 	return false
 
+# Place a structure at a specific world position (no raycast needed)
+func place_structure_at_position(world_pos: Vector3, structure_type: String, block_id: int = -1, offset_up: float = 5.0) -> bool:
+	var vt := _get_tool()
+	if vt == null:
+		print("Could not get voxel tool")
+		return false
+
+	if block_id < 0:
+		block_id = default_place_block_id
+	
+	# Convert world position to terrain local space
+	var local_pos := terrain.to_local(world_pos)
+	var base_pos := Vector3i(floor(local_pos.x), floor(local_pos.y), floor(local_pos.z))
+	
+	# Apply upward offset
+	var center := base_pos + Vector3i(0, int(offset_up), 0)
+	
+	# Place structure based on type
+	match structure_type:
+		"cube_3x3x3":
+			var half := 1
+			var begin := Vector3i(center.x - half, center.y - half, center.z - half)
+			var end := Vector3i(center.x + half, center.y + half, center.z + half)
+			
+			var check_size := Vector3(3, 3, 3)
+			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
+				print("Cube placement area not editable")
+				return false
+			
+			place_blocky_box(begin, end, block_id)
+			return true
+			
+		"box_4x4x8":
+			var begin := Vector3i(center.x - 2, center.y - 2, center.z - 2)
+			var end := Vector3i(center.x + 1, center.y + 5, center.z + 1)
+			
+			var check_size := Vector3(4, 8, 4)
+			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
+				print("Box placement area not editable")
+				return false
+			
+			place_blocky_box(begin, end, block_id)
+			return true
+			
+		"sphere_r4":
+			var radius := 4.0
+			var sphere_center := Vector3(center)
+			
+			var check_begin := sphere_center - Vector3.ONE * radius
+			var check_size := Vector3.ONE * (radius * 2)
+			if not vt.is_area_editable(AABB(check_begin, check_size)):
+				print("Sphere placement area not editable")
+				return false
+			
+			place_blocky_sphere(sphere_center, radius, block_id)
+			return true
+		
+		"platform_10x10":
+			# Create a flat 10x10 platform
+			var half := 5
+			var begin := Vector3i(center.x - half, center.y, center.z - half)
+			var end := Vector3i(center.x + half - 1, center.y, center.z + half - 1)
+			
+			var check_size := Vector3(10, 1, 10)
+			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
+				print("Platform placement area not editable")
+				return false
+			
+			place_blocky_box(begin, end, block_id)
+			return true
+	
+	print("Unknown structure type: ", structure_type)
+	return false
+
 # Convenience: paint/replace exactly the voxel you hit (no +normal)
 func paint_hit_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_id: int = -1, max_dist: float = -1.0) -> bool:
 	var vt := _get_tool()

@@ -183,7 +183,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_last_ray_hit = Vector3.ZERO
 				_last_action = "No valid surface hit"
 
-	# Hotkey structure placement
+	# Hotkey structure placement (raycast-based)
 	if event is InputEventKey and event.pressed:
 		var structure_type = ""
 		var structure_name = ""
@@ -231,6 +231,50 @@ func _unhandled_input(event: InputEvent) -> void:
 				_last_action = "Failed to place " + structure_name
 				_last_toggles = "Failed: " + structure_name
 	
+	# Hotkey structure placement (above player - no raycast)
+	if event is InputEventKey and event.pressed:
+		var structure_type = ""
+		var structure_name = ""
+		var offset_up = 5.0  # How many blocks above player
+		
+		if event.keycode == KEY_V:
+			structure_type = "platform_10x10"
+			structure_name = "10x10 Platform"
+			offset_up = 3.0
+		elif event.keycode == KEY_B:
+			structure_type = "cube_3x3x3"
+			structure_name = "3x3x3 Cube (above)"
+			offset_up = 5.0
+		elif event.keycode == KEY_N:
+			structure_type = "box_4x4x8"
+			structure_name = "4x4x8 Tower (above)"
+			offset_up = 5.0
+		elif event.keycode == KEY_M:
+			structure_type = "sphere_r4"
+			structure_name = "Sphere (above)"
+			offset_up = 8.0
+		
+		if structure_type != "" and world_builder != null and world_builder.has_method("place_structure_at_position"):
+			var player_pos: Vector3 = global_transform.origin
+			
+			var ok: bool = world_builder.place_structure_at_position(player_pos, structure_type, click_block_id, offset_up)
+			
+			if ok:
+				_last_ray_origin = player_pos
+				_last_ray_hit = player_pos + Vector3(0, offset_up, 0)
+				_last_ray_direction = Vector3.UP
+				_last_ray_success = true
+				_last_action = structure_name + " placed above player"
+				_last_toggles = "Spawned " + structure_name + " above"
+				_last_ray_pitch = 90.0
+				_last_ray_yaw = 0.0
+			else:
+				_last_ray_success = false
+				_last_ray_hit = Vector3.ZERO
+				_last_action = "Failed to place " + structure_name + " above player"
+				_last_toggles = "Failed: " + structure_name + " (not editable)"
+				
+				
 func _create_debug_hud() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
