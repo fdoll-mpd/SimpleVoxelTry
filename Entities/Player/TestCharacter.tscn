@@ -1,7 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://bpgo0udxilfai"]
+[gd_scene load_steps=8 format=3 uid="uid://bpgo0udxilfai"]
 
 [ext_resource type="Script" uid="uid://bbswwnx60gm78" path="res://Entities/Player/test_character.gd" id="1_21ih4"]
 [ext_resource type="Script" uid="uid://b5rjxolwdfhmc" path="res://Entities/Player/eye_camera.gd" id="2_05nuq"]
+[ext_resource type="Texture2D" uid="uid://d4a3rfg3b1tro" path="res://Entities/Player/crosshair.png" id="3_4l37u"]
+[ext_resource type="Script" uid="uid://1cg8xnvnsjoh" path="res://Entities/Player/crosshair.gd" id="4_w62xf"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_21ih4"]
 
@@ -29,3 +31,7 @@ script = ExtResource("2_05nuq")
 [node name="VoxelViewer" type="VoxelViewer" parent="Head"]
 view_distance = 1024
 enabled_in_editor = true
+
+[node name="Crosshair" type="Sprite2D" parent="."]
+texture = ExtResource("3_4l37u")
+script = ExtResource("4_w62xf")

@@ -9,7 +9,7 @@ var _hud: Label
 
 
 func _get_tool() -> VoxelTool:
-	# Cache the tool — getting it every time is a little slower.
+	# Cache the tool – getting it every time is a little slower.
 	if _vt == null:
 		_vt = terrain.get_voxel_tool()
 	return _vt
@@ -21,6 +21,7 @@ func world_to_voxel(world_pos: Vector3) -> Vector3i:
 # Convert voxel coords (terrain-local) to world space.
 func voxel_to_world(voxel_pos: Vector3) -> Vector3:
 	return terrain.to_global(voxel_pos)       # terrain local -> world
+
 # =========================
 # BLOCKY (VoxelMesherBlocky)
 # =========================
@@ -59,7 +60,6 @@ func place_blocky_sphere(center: Vector3, radius: float, voxel_id: int) -> void:
 func place_sdf_box(begin: Vector3i, end_exclusive: Vector3i, add: bool = true) -> void:
 	var vt := _get_tool()
 	vt.channel = VoxelBuffer.CHANNEL_SDF
-	#vt.mode = add ? VoxelTool.MODE_ADD : VoxelTool.MODE_REMOVE
 	if add:
 		vt.mode = VoxelTool.MODE_ADD
 	else:
@@ -70,21 +70,36 @@ func place_sdf_box(begin: Vector3i, end_exclusive: Vector3i, add: bool = true) -
 func place_sdf_sphere(center: Vector3, radius: float, add: bool = true) -> void:
 	var vt := _get_tool()
 	vt.channel = VoxelBuffer.CHANNEL_SDF
-	#vt.mode = add ? VoxelTool.MODE_ADD : VoxelTool.MODE_REMOVE
 	if add:
 		vt.mode = VoxelTool.MODE_ADD
 	else:
 		vt.mode = VoxelTool.MODE_REMOVE
 	vt.do_sphere(center, radius)
 
+func make_voxel_plane(corner: Vector3 = Vector3(-20, 3, -20), side: int=50, voxel_id: int = 2):
+	var vt: VoxelTool = _get_tool()
+	for x_side in side:
+		for z_side in side:
+			var base := Vector3i(floor(corner.x + x_side), floor(corner.y), floor(corner.z + z_side))
+			var normal := Vector3i(0, 1, 0)
+			var target := base + normal
+
+			# Editable check (prevents "Area not editable")
+			if not vt.is_area_editable(AABB(Vector3(target), Vector3.ONE)):
+				print("Failed make voxel plane editable check")
+				return false
+			
+			vt.channel = VoxelBuffer.CHANNEL_TYPE
+			vt.mode = VoxelTool.MODE_ADD
+			vt.value = voxel_id
+			vt.do_point(target)
 
 # =========================
 # EXAMPLES
 # =========================
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	#terrain.scale = Vector3(0.1, 0.1, 0.1)
-	
+	make_voxel_plane(Vector3(-20, 3, -20), 50, 2)
 
 	# Example blocky placements (IDs depend on your VoxelLibrary setup):
 	# 1) Cube: 8x8x8 of voxel_id=1 centered at (0, 8, 0)
@@ -96,11 +111,6 @@ func _ready() -> void:
 	# 3) Sphere: radius 6 of voxel_id=3 at (16, 10, 0)
 	place_blocky_sphere(Vector3(16, 10, 0), 6.0, 3)
 
-	# Example smooth/SDF placements (uncomment if using Transvoxel/Marching):
-	# Adds a smooth box "blob"
-	# place_sdf_box(Vector3i(-8, 4, -8), Vector3i(8, 12, 8), true)
-	# Carves a smooth spherical hole
-	# place_sdf_sphere(Vector3(0, 6, 16), 5.5, false)
 	_setup_limits_hud()
 	_make_debug_ground_plane()
 
@@ -115,7 +125,6 @@ func _setup_limits_hud() -> void:
 	_hud.position = Vector2(8, 8)
 	_hud.add_theme_color_override("font_color", Color(1,1,1,1))
 	_hud.add_theme_font_size_override("font_size", 14)
-	#cl.add_child(_hud)
 	terrain.debug_set_draw_flag(VoxelTerrain.DEBUG_DRAW_VOLUME_BOUNDS, true)
 		
 func _unhandled_input(event: InputEvent) -> void:
@@ -131,21 +140,19 @@ func _make_debug_ground_plane(
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(size, size)
 	plane_mi.mesh = plane
-	#plane_mi.rotate_x(-PI / 2.0)
 	plane_mi.position = Vector3(0, -1, 0)
 	plane_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.albedo_color = plane_color
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED            # <— draw both sides
-	m.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED  # <— force opaque
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
 	plane_mi.material_override = m
 	add_child(plane_mi)
 
 	# --- Outline as a thin line loop slightly above the plane ---
-	# We'll build a simple line strip rectangle using SurfaceTool.
 	var half := size * 0.5
 	var y := -1.02  # small offset to prevent z-fighting with the plane
 	var corners := [
@@ -218,11 +225,6 @@ func _update_limits_hud() -> void:
 	for n in get_tree().get_nodes_in_group("VoxelViewers"):
 		if n is VoxelViewer:
 			viewers.append(n)
-	# Fallback: if you didn’t group them, search the whole tree (costly but fine for debug)
-	if viewers.is_empty():
-		for n in get_tree().get_nodes_in_group("**"):
-			if n is VoxelViewer:
-				viewers.append(n)
 
 	# 3) Build text
 	var sb := ""
@@ -244,9 +246,9 @@ func _update_limits_hud() -> void:
 		)
 
 		# Intersection of viewer AABB and terrain bounds (approx editable region)
-		var i_min := v_aabb.position.max(b.position)   # component-wise max
+		var i_min := v_aabb.position.max(b.position)
 		var i_max := (v_aabb.position + v_aabb.size).min(b.position + b.size)
-		var i_size := (i_max - i_min).max(Vector3(0,0,0)) # clamp negatives to 0
+		var i_size := (i_max - i_min).max(Vector3(0,0,0))
 		var has_intersection := i_size.x > 0.0 and i_size.y > 0.0 and i_size.z > 0.0
 
 		sb += "\nViewer @ %s\n" % str(v.name)
@@ -264,17 +266,21 @@ func _update_limits_hud() -> void:
 			sb += "    i.max: (%.1f, %.1f, %.1f)\n" % [i_max.x, i_max.y, i_max.z]
 			sb += "    i.size: (%.1f, %.1f, %.1f)\n" % [i_size.x, i_size.y, i_size.z]
 
-	# 5) Live “is this area editable?” probe around origin (10×10×10)
+	# 5) Live "is this area editable?" probe around origin (10×10×10)
 	var probe := AABB(Vector3(-5, -5, -5), Vector3(10, 10, 10))
 	var editable := vt.is_area_editable(probe)
 	if editable:
 		sb += "\nProbe is_area_editable([-5..5]^3 around origin): %s\n" % ("true")
 	else:
 		sb += "\nProbe is_area_editable([-5..5]^3 around origin): %s\n" % ("false")
-	#sb += "\nProbe is_area_editable([-5..5]^3 around origin): %s\n" % (editable ? "true" : "false")
 
 	_hud.text = sb
-	
+
+# =========================
+# IMPROVED BLOCK PLACEMENT
+# =========================
+
+# Place a single block using proper raycast - NO FALLBACK
 func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_id: int = -1, max_dist: float = -1.0) -> bool:
 	var vt := _get_tool()
 	if vt == null:
@@ -285,64 +291,110 @@ func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 		block_id = default_place_block_id
 	if max_dist <= 0.0:
 		max_dist = max_place_distance
-
+	
 	vt.set_raycast_normal_enabled(true)
 
-	# 1) Try voxel raycast first (world space)
+	# Raycast to find a voxel hit
 	var dir := world_dir.normalized()
 	var hit := vt.raycast(world_origin, dir, max_dist)
-	if hit != null:
-		var target := Vector3i(hit.position) + Vector3i(hit.normal)
-		if not vt.is_area_editable(AABB(Vector3(target), Vector3.ONE)):
-			print("Got a hit but failed area editable check")
-			return false
-		vt.channel = VoxelBuffer.CHANNEL_TYPE
-		vt.mode = VoxelTool.MODE_SET
-		vt.value = block_id
-		vt.do_point(target)
-		return true
-
-	# 2) Fallback: treat plane x = 1 as a hit if we cross it within max_dist
-	# Solve world_origin.x + dir.x * t = 1  =>  t = (1 - origin.x) / dir.x
-	var dir_local: Vector3 = terrain.global_transform.basis.inverse() * dir
-	var origin_local: Vector3 = terrain.to_local(world_origin)
-
-	# Solve origin_local.x + dir_local.x * t = 1
-	if abs(dir_local.x) < 1e-5:
+	
+	if hit == null:
+		# No hit - don't place anything
 		return false
-	var t := (1.0 - origin_local.x) / dir_local.x
-	if t < 0.0 or t > max_dist:
-		return false
-	var p_local: Vector3 = origin_local + dir_local * t
-	var p_world: Vector3 = terrain.to_global(p_local)
-	#var p_local := terrain.to_local(p_world)
-
-	# Base voxel at (floored) local position
-	var base := Vector3i(floor(p_local.x), floor(p_local.y), floor(p_local.z))
-
-	# Use the ray direction in TERRAIN-LOCAL space to choose the face normal
-	#var dir_local := terrain.global_transform.basis.inverse() * dir
-	var normal := Vector3i(1, 0, 0)
-	if dir_local.x < 0.0:
-		normal.x = -1
-
-	var target := base + normal
-
-	# Editable check (prevents "Area not editable")
+	
+	# Place block adjacent to the hit surface (using the normal)
+	var target := Vector3i(hit.position) + Vector3i(hit.normal)
+	
+	# Check if area is editable
 	if not vt.is_area_editable(AABB(Vector3(target), Vector3.ONE)):
-		print("Failed area editable check")
+		print("Target position not editable")
 		return false
-
-	# Place one block
+	
+	# Place the block
 	vt.channel = VoxelBuffer.CHANNEL_TYPE
-	vt.mode = VoxelTool.MODE_SET
+	vt.mode = VoxelTool.MODE_ADD
 	vt.value = block_id
 	vt.do_point(target)
 	return true
 
+# Place a structure (cube, box, or sphere) from raycast hit point
+func place_structure_from_ray(world_origin: Vector3, world_dir: Vector3, structure_type: String, block_id: int = -1, max_dist: float = -1.0) -> bool:
+	var vt := _get_tool()
+	if vt == null:
+		print("Could not get voxel tool")
+		return false
 
+	if block_id < 0:
+		block_id = default_place_block_id
+	if max_dist <= 0.0:
+		max_dist = max_place_distance
+	
+	vt.set_raycast_normal_enabled(true)
 
-# Convenience: place/replace exactly the voxel you hit (no +normal)
+	# Raycast to find placement location
+	var dir := world_dir.normalized()
+	var hit := vt.raycast(world_origin, dir, max_dist)
+	
+	if hit == null:
+		print("No hit for structure placement")
+		return false
+	
+	# Calculate center point for structure (offset from hit surface)
+	var hit_pos := Vector3i(hit.position)
+	var normal := Vector3i(hit.normal)
+	
+	# Place structure based on type
+	match structure_type:
+		"cube_3x3x3":
+			# Place a 3x3x3 cube
+			var center := hit_pos + normal * 2  # Offset by 2 to clear the surface
+			var half := 1  # 3/2 = 1 (integer division)
+			var begin := Vector3i(center.x - half, center.y - half, center.z - half)
+			var end := Vector3i(center.x + half, center.y + half, center.z + half)
+			
+			# Check if area is editable
+			var check_size := Vector3(3, 3, 3)
+			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
+				print("Cube placement area not editable")
+				return false
+			
+			place_blocky_box(begin, end, block_id)
+			return true
+			
+		"box_4x4x8":
+			# Place a 4x4x8 rectangular prism (tall)
+			var center := hit_pos + normal * 4  # Offset by 4 to clear the surface
+			var begin := Vector3i(center.x - 2, center.y - 2, center.z - 2)
+			var end := Vector3i(center.x + 1, center.y + 5, center.z + 1)
+			
+			# Check if area is editable
+			var check_size := Vector3(4, 8, 4)
+			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
+				print("Box placement area not editable")
+				return false
+			
+			place_blocky_box(begin, end, block_id)
+			return true
+			
+		"sphere_r4":
+			# Place a sphere with radius 4
+			var center := Vector3(hit_pos) + Vector3(normal) * 5.0  # Offset by 5 to clear the surface
+			var radius := 4.0
+			
+			# Check if area is editable (approximate bounding box)
+			var check_begin := center - Vector3.ONE * radius
+			var check_size := Vector3.ONE * (radius * 2)
+			if not vt.is_area_editable(AABB(check_begin, check_size)):
+				print("Sphere placement area not editable")
+				return false
+			
+			place_blocky_sphere(center, radius, block_id)
+			return true
+	
+	print("Unknown structure type: ", structure_type)
+	return false
+
+# Convenience: paint/replace exactly the voxel you hit (no +normal)
 func paint_hit_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_id: int = -1, max_dist: float = -1.0) -> bool:
 	var vt := _get_tool()
 	if vt == null:
@@ -352,7 +404,7 @@ func paint_hit_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 	if max_dist <= 0.0:
 		max_dist = max_place_distance
 
-	vt.set_raycast_normal_enabled(false) # we don't need the face here
+	vt.set_raycast_normal_enabled(false)
 	var hit := vt.raycast(world_origin, world_dir.normalized(), max_dist)
 	if hit == null:
 		return false
