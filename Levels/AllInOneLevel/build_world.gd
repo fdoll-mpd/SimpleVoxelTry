@@ -303,20 +303,75 @@ func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 		return false
 	
 	# Place block adjacent to the hit surface (using the normal)
-	var target := Vector3i(hit.position) + Vector3i(hit.normal)
-	
-	# Check if area is editable
-	if not vt.is_area_editable(AABB(Vector3(target), Vector3.ONE)):
-		print("Target position not editable")
+	#var target := Vector3i(hit.position) + Vector3i(hit.normal)
+	#
+	## Check if area is editable
+	#if not vt.is_area_editable(AABB(Vector3(target), Vector3.ONE)):
+		#print("Target position not editable")
+		#return false
+	#
+	## Place the block
+	#vt.channel = VoxelBuffer.CHANNEL_TYPE
+	#vt.mode = VoxelTool.MODE_ADD
+	#vt.value = block_id
+	#vt.do_point(target)
+	#return true
+	var hit_pos: Vector3i = hit.position
+	var n := hit.normal               # Vector3 (e.g. (-0.999, 0, 0))
+	var step := Vector3i(
+		_axis_step(n.x),
+		_axis_step(n.y),
+		_axis_step(n.z)
+	)
+
+	var place_pos: Vector3i = hit_pos + step
+
+	# Debug info: which voxel, which face/normal, and where we’ll place
+	print("HIT pos=", hit_pos, 
+		  " face=", _face_name(n), 
+		  " normal=", n, 
+		  " step=", step, 
+		  " PLACE pos=", place_pos)
+
+	# (optional) bounds/editability check around the place position
+	if not vt.is_area_editable(AABB(Vector3(place_pos), Vector3.ONE)):
 		return false
-	
-	# Place the block
+
+	vt.mode = VoxelTool.MODE_SET
 	vt.channel = VoxelBuffer.CHANNEL_TYPE
-	vt.mode = VoxelTool.MODE_ADD
 	vt.value = block_id
-	vt.do_point(target)
+	vt.do_point(place_pos)
 	return true
 
+func _axis_step(n: float) -> int:
+	if n > 0.05:
+		return 1
+	elif n < -0.05:
+		return -1
+	return 0
+
+# Human-readable face name for debugging
+func _face_name(n: Vector3) -> String:
+	var ax := absf(n.x)
+	var ay := absf(n.y)
+	var az := absf(n.z)
+
+	if ax > ay and ax > az:
+		if n.x > 0.0:
+			return "POS_X (+X/right)"
+		else:
+			return "NEG_X (-X/left)"
+	elif ay > ax and ay > az:
+		if n.y > 0.0:
+			return "POS_Y (+Y/top)"
+		else:
+			return "NEG_Y (-Y/bottom)"
+	else:
+		if n.z > 0.0:
+			return "POS_Z (+Z/front)"
+		else:
+			return "NEG_Z (-Z/back)"
+			
 # Place a structure (cube, box, or sphere) from raycast hit point
 func place_structure_from_ray(world_origin: Vector3, world_dir: Vector3, structure_type: String, block_id: int = -1, max_dist: float = -1.0) -> bool:
 	var vt := _get_tool()
