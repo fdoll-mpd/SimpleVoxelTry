@@ -23,12 +23,13 @@ const DEAD_SHRUB := 26
 var channel := VoxelBuffer.CHANNEL_TYPE
 
 # Public API mirrors tree_generator.gd: generate() -> Structure
-func generate(block_scale: int = 1) -> Structure:
+func generate(grow_by: int = 1) -> Structure:
 	var voxels := {}
+	const stretch: Vector3 = Vector3(1,1,1)
 	
 	# Layout parameters
 	var house_count := 3
-	var spacing := 24 * block_scale  # distance between house origins
+	var spacing := 24 * grow_by  # distance between house origins
 	var origin := Vector3i(0, 1, 0)  # build one block above Y=0 to avoid seam artifacts
 	const layout_scale: int = 1
 	
@@ -36,13 +37,13 @@ func generate(block_scale: int = 1) -> Structure:
 		var hx := i * spacing
 		var house_origin := origin + Vector3i(hx, 0, 0)
 		#_build_house(voxels, house_origin, Vector3i(9, 6, 7), scale)
-		_build_house(voxels, house_origin, Vector3i(9, 6, 7), layout_scale, block_scale)
+		_build_house(voxels, house_origin, Vector3i(9, 6, 7), stretch, grow_by)
 		
 		# Simple front yard pad + path
 		#_fill_rect(voxels, house_origin + Vector3i(-2, -1, -3), Vector3i(13, 1, 3), GRASS)
 		#_fill_rect(voxels, house_origin + Vector3i(3, -1, -6), Vector3i(3, 1, 3), DIRT)
-		_fill_rect(voxels, house_origin + Vector3i(-2 * layout_scale, -1, -3 * layout_scale), Vector3i(13 * layout_scale, 1, 3 * layout_scale), GRASS, block_scale)
-		_fill_rect(voxels, house_origin + Vector3i(3 * layout_scale, -1, -6 * layout_scale), Vector3i(3 * layout_scale, 1, 3 * layout_scale), DIRT, block_scale)
+		_fill_rect(voxels, house_origin + Vector3i(-2 * layout_scale, -1, -3 * layout_scale), Vector3i(13 * layout_scale, 1, 3 * layout_scale), GRASS, grow_by)
+		_fill_rect(voxels, house_origin + Vector3i(3 * layout_scale, -1, -6 * layout_scale), Vector3i(3 * layout_scale, 1, 3 * layout_scale), DIRT, grow_by)
 		
 		# Trees left/right/front
 		_build_tree(voxels, house_origin + Vector3i(-4, 0,  4))
@@ -69,83 +70,86 @@ func _set_if_empty(voxels: Dictionary, p: Vector3i, v: int) -> void:
 	if not voxels.has(p):
 		voxels[p] = v
 
-func _build_house(voxels: Dictionary, o: Vector3i, base_dims: Vector3i, layout_scale: int, a: int) -> void:
-	var w := base_dims.x * layout_scale * a
-	var h := base_dims.y * layout_scale * a
-	var d := base_dims.z * layout_scale * a
+func _build_house(voxels: Dictionary, o: Vector3i, base_dims: Vector3i, layout_scale: Vector3, a: int) -> void:
+	var w := base_dims.x * a
+	var h := base_dims.y * a
+	var d := base_dims.z * a
 
 	# Foundation (dirt) and floor (planks)
-	_fill_rect(voxels, o + Vector3i(0, -1, 0), Vector3i(w, 1, d), DIRT, a)
-	_fill_rect(voxels, o + Vector3i(0,  0, 0), Vector3i(w, 1, d), PLANKS, a)
+	#var dirt_extent := Vector3i(floor(w * layout_scale.x), floor(1 * layout_scale.y), floor(d* layout_scale.z))
+	var floor_extent := Vector3i(floor(w * layout_scale.x), floor(1 * layout_scale.y), floor(d * layout_scale.z))
+	_fill_rect(voxels, o + Vector3i(0, -1, 0), floor_extent, DIRT, a)
+	_fill_rect(voxels, o + Vector3i(0,  0, 0), floor_extent, PLANKS, a)
 
 	# Corner posts (vertical logs), thickness = layout_scale
-	var t = max(1, layout_scale * a)
+	#var t = max(1, layout_scale * a)
 	var corners := [
 		o + Vector3i(0, 0, 0),
-		o + Vector3i(w - t, 0, 0),
-		o + Vector3i(0, 0, d - t),
-		o + Vector3i(w - t, 0, d - t)
+		o + Vector3i(w - layout_scale.x, 0, 0),
+		o + Vector3i(0, 0, d - layout_scale.z),
+		o + Vector3i(w - layout_scale.x, 0, d - layout_scale.z)
 	]
 	for c in corners:
-		_fill_rect(voxels, c, Vector3i(t, h, t), LOG_Y, a)
+		_fill_rect(voxels, c, Vector3i(layout_scale.x, h, layout_scale.z), LOG_Y, a)
 
 	# Walls (planks with window band). Build as solid ring of thickness t first.
 	# Front/back slabs
-	_fill_rect(voxels, o + Vector3i(0, 1, 0),     Vector3i(w, h - 2, t), PLANKS, a)         # front
-	_fill_rect(voxels, o + Vector3i(0, 1, d - t), Vector3i(w, h - 2, t), PLANKS, a)         # back
+	_fill_rect(voxels, o + Vector3i(0, 1, 0),     Vector3i(w, h - 2, layout_scale.z), PLANKS, a)         # front
+	_fill_rect(voxels, o + Vector3i(0, 1, d - layout_scale.z), Vector3i(w, h - 2, layout_scale.z), PLANKS, a)         # back
 	# Left/right slabs
-	_fill_rect(voxels, o + Vector3i(0, 1, 0),     Vector3i(t, h - 2, d), PLANKS, a)         # left
-	_fill_rect(voxels, o + Vector3i(w - t, 1, 0), Vector3i(t, h - 2, d), PLANKS, a)         # right
+	_fill_rect(voxels, o + Vector3i(0, 1, 0),     Vector3i(layout_scale.x, h - 2, d), PLANKS, a)         # left
+	_fill_rect(voxels, o + Vector3i(w - layout_scale.x, 1, 0), Vector3i(layout_scale.x, h - 2, d), PLANKS, a)         # right
 
 	# Carve and glaze window band
-	var y0 := o.y + 1
-	for y in range(y0, y0 + (h - 2)):
+	var y0 := o.y + layout_scale.y
+	for y in range(y0, y0 + (h - (layout_scale.y * 2))):
 		var y_local := y - o.y
-		if _is_window_row(y_local, layout_scale):
+		if _is_window_row(y_local, layout_scale.y):
 			# Front/back strips: carve then glass
-			for x in range(o.x + t, o.x + w - t):
+			for x in range(o.x + layout_scale.x, o.x + w - layout_scale.x):
 				# front
-				for z in t:
+				for z in layout_scale.z:
 					_place(voxels, Vector3i(x, y, o.z + z), AIR, a)
-				_place(voxels, Vector3i(x, y, o.z + int(t/2)), GLASS, a)
+				_place(voxels, Vector3i(x, y, o.z + int(layout_scale.z/2)), GLASS, a)
 				# back
-				for z in t:
+				for z in layout_scale.z:
 					_place(voxels, Vector3i(x, y, o.z + d - 1 - z), AIR, a)
-				_place(voxels, Vector3i(x, y, o.z + d - 1 - int(t/2)), GLASS, a)
+				_place(voxels, Vector3i(x, y, o.z + d - 1 - int(layout_scale.z/2)), GLASS, a)
 			# Left/right strips: carve then glass
-			for z in range(o.z + t, o.z + d - t):
+			for z in range(o.z + layout_scale.z, o.z + d - layout_scale.z):
 				# left
-				for x in t:
+				for x in layout_scale.x:
 					_place(voxels, Vector3i(o.x + x, y, z), AIR, a)
-				_place(voxels, Vector3i(o.x + int(t/2), y, z), GLASS, a)
+				_place(voxels, Vector3i(o.x + int(layout_scale.x/2), y, z), GLASS, a)
 				# right
-				for x in t:
+				for x in layout_scale.x:
 					_place(voxels, Vector3i(o.x + w - 1 - x, y, z), AIR, a)
-				_place(voxels, Vector3i(o.x + w - 1 - int(t/2), y, z), GLASS, a)
+				_place(voxels, Vector3i(o.x + w - 1 - int(layout_scale.x/2), y, z), GLASS, a)
 
 	# Door opening on front center (width = t, height = 2*layout_scale)
-	var door_w = t
-	var door_h = max(2 * layout_scale, t)
+	var door_w = layout_scale.z
+	#var door_h = max(2 * layout_scale, t)
+	var door_h = layout_scale.y
 	var door_x0 := o.x + int((w - door_w) / 2)
 	for y in range(o.y + 1, o.y + 1 + door_h):
 		for x in range(door_x0, door_x0 + door_w):
-			for z in t:
+			for z in layout_scale.z:
 				_place(voxels, Vector3i(x, y, o.z + z), AIR, a)
 
 	# Ceiling
-	_fill_rect(voxels, o + Vector3i(0, h - 1, 0), Vector3i(w, t, d), PLANKS, a)
+	_fill_rect(voxels, o + Vector3i(0, h - 1, 0), Vector3i(w, layout_scale.y, d), PLANKS, a)
 
 	# Simple roof border and cap
-	_fill_rect(voxels, o + Vector3i(0, h, 0),     Vector3i(w, t, t), LOG_X, a)
-	_fill_rect(voxels, o + Vector3i(0, h, d - t), Vector3i(w, t, t), LOG_X, a)
-	_fill_rect(voxels, o + Vector3i(0, h, 0),     Vector3i(t, t, d), LOG_Z, a)
-	_fill_rect(voxels, o + Vector3i(w - t, h, 0), Vector3i(t, t, d), LOG_Z, a)
-	_fill_rect(voxels, o + Vector3i(t, h, t),     Vector3i(w - 2 * t, t, d - 2 * t), PLANKS, a)
+	_fill_rect(voxels, o + Vector3i(0, h, 0),     Vector3i(w, layout_scale.y, layout_scale.z), LOG_X, a)
+	_fill_rect(voxels, o + Vector3i(0, h, d - layout_scale.z), Vector3i(w, layout_scale.y, layout_scale.z), LOG_X, a)
+	_fill_rect(voxels, o + Vector3i(0, h, 0),     Vector3i(layout_scale.x, layout_scale.y, d), LOG_Z, a)
+	_fill_rect(voxels, o + Vector3i(w - layout_scale.x, h, 0), Vector3i(layout_scale.x, layout_scale.y, d), LOG_Z, a)
+	_fill_rect(voxels, o + Vector3i(layout_scale.x, h, layout_scale.z),     Vector3i(w - 2 * layout_scale.x, layout_scale.y, d - 2 * layout_scale.z), PLANKS, a)
 
 	# Interior: clear
-	for x in range(o.x + t, o.x + w - t):
-		for y in range(o.y + t, o.y + h - t):
-			for z in range(o.z + t, o.z + d - t):
+	for x in range(o.x + layout_scale.x, o.x + w - layout_scale.x):
+		for y in range(o.y + layout_scale.y, o.y + h - layout_scale.y):
+			for z in range(o.z + layout_scale.z, o.z + d - layout_scale.z):
 				voxels[Vector3i(x, y, z)] = AIR
 		
 #func _build_house(voxels: Dictionary, o: Vector3i, dims: Vector3i, scale: int = 1) -> void:
