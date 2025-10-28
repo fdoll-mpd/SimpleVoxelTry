@@ -31,7 +31,7 @@ const _y_dir : Array[Vector3] = [
 	Vector3(0, 0, 1)
 ]
 
-const ROOT = "res://blocky_game/blocks"
+const ROOT = "res://CopyFrom/BlockLib/blocks"
 
 const AIR_ID = 0
 
@@ -114,20 +114,20 @@ func _init():
 		"transparent": true,
 		"backface_culling": true
 	})
-	_create_block({
-		"name": "rail",
-		"gui_model": "rail_x.obj",
-		"rotation_type": ROTATION_TYPE_CUSTOM_BEHAVIOR,
-		"voxels": [
-			# Order matters, see rail.gd
-			"rail_x", "rail_z",
-			"rail_turn_nx", "rail_turn_px", "rail_turn_nz", "rail_turn_pz",
-			"rail_slope_nx", "rail_slope_px","rail_slope_nz", "rail_slope_pz"
-		],
-		"transparent": true,
-		"backface_culling": true,
-		"behavior": "rail.gd"
-	})
+	#_create_block({
+		#"name": "rail",
+		#"gui_model": "rail_x.obj",
+		#"rotation_type": ROTATION_TYPE_CUSTOM_BEHAVIOR,
+		#"voxels": [
+			## Order matters, see rail.gd
+			#"rail_x", "rail_z",
+			#"rail_turn_nx", "rail_turn_px", "rail_turn_nz", "rail_turn_pz",
+			#"rail_slope_nx", "rail_slope_px","rail_slope_nz", "rail_slope_pz"
+		#],
+		#"transparent": true,
+		#"backface_culling": true,
+		#"behavior": "rail.gd"
+	#})
 	_create_block({
 		"name": "leaves",
 		"gui_model": "leaves.obj",
@@ -187,6 +187,7 @@ func _create_block(params: Dictionary):
 	if params.behavior != "":
 		# Block with special behavior
 		var behavior_path := str(ROOT, "/", params.directory, "/", params.behavior)
+		print(ROOT, ";;;", params.directory, ";;;",  params.behavior)
 		var behavior = load(behavior_path)
 		block = behavior.new()
 	else:

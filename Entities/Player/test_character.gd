@@ -1,18 +1,24 @@
 extends CharacterBody3D
 
+const Hotbar = preload("res://Entities/Player/Hotbar/hotbar.gd")
+const Util = preload("res://CopyFrom/common/util.gd")
 @export var mouse_sensitivity: float = 0.01
 @onready var head: Node3D = $Head
 @onready var eye_camera: Camera3D = $Head/EyeCamera
-
+#@onready var viewer: VoxelViewer = $VoxelViewer
 @export var voxel_terrain_path: NodePath 
 @export var place_block_id: int = 1
 @export var max_place_distance: float = 64.0
 @export var world_builder_path: NodePath
+#@export var view_distance_voxels: float = 128.0
 @onready var world_builder = (get_node(world_builder_path) if not world_builder_path.is_empty() else null)
 
 @export var click_block_id: int = 1
 @export var click_max_distance: float = 64.0
+@onready var _hotbar : Hotbar = get_node("./Hotbar")
 
+@export var cursor_material : Material
+var _cursor : MeshInstance3D = null
 
 const SPEED := 5.0
 const RUN_MULT := 2.0
@@ -35,9 +41,21 @@ var _last_ray_pitch: float = 0.0
 var _last_ray_yaw: float = 0.0
 var _last_action: String = ""
 
-var _terrain: VoxelTerrain
+#var _terrain: VoxelTerrain
+@onready var _terrain : VoxelTerrain = get_node("/root/AllInOne/VoxelTerrain")
 var _vt: VoxelTool
 
+const _hotbar_keys = {
+	KEY_1: 0,
+	KEY_2: 1,
+	KEY_3: 2,
+	KEY_4: 3,
+	KEY_5: 4,
+	KEY_6: 5,
+	KEY_7: 6,
+	KEY_8: 7,
+	KEY_9: 8
+}
 
 class Crosshair:
 	extends Control
@@ -47,6 +65,8 @@ class Crosshair:
 	var color: Color = Color(1, 1, 1, 0.9)
 
 	func _ready() -> void:
+		#if viewer and world_builder and world_builder.has_method("voxel_size_world"):
+			#viewer.view_distance = view_distance_voxels * world_builder.voxel_size_world()
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		set_anchors_preset(Control.PRESET_FULL_RECT)
 		resized.connect(_on_resized)
@@ -94,9 +114,21 @@ func _ready() -> void:
 	var cross := Crosshair.new()
 	layer.add_child(cross)
 	
-	_terrain = get_node(voxel_terrain_path) as VoxelTerrain
+	#_terrain = get_node(voxel_terrain_path) as VoxelTerrain
+	#_terrain: VoxelTerrain = get_node(voxel_terrain_path)
 	_vt = _terrain.get_voxel_tool()
 	_vt.set_raycast_normal_enabled(true)
+	
+	var mesh := Util.create_wirecube_mesh(Color(0,0,0))
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.mesh = mesh
+	if cursor_material != null:
+		mesh_instance.material_override = cursor_material
+	mesh_instance.set_scale(Vector3(1,1,1)*1.01)
+	_cursor = mesh_instance
+	
+	_terrain.add_child(_cursor)
+	_vt.channel = VoxelBuffer.CHANNEL_TYPE
 
 func _physics_process(delta: float) -> void:
 
@@ -119,10 +151,7 @@ func _physics_process(delta: float) -> void:
 		_last_toggles = "is_moving_faster toggled -> %s" % (str(move_faster))
 		
 	var speed := SPEED * (RUN_MULT if move_faster else 1.0)
-	var vertical := (
-		Input.get_action_strength("fly_up")
-		- Input.get_action_strength("fly_down")
-	)
+	var vertical := (Input.get_action_strength("fly_up") - Input.get_action_strength("fly_down"))
 	var input2 := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	var input3 := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	var direction := (eye_camera.global_transform.basis *  Vector3(input3.x, (vertical if flying else 0), input3.y)).normalized()
@@ -151,7 +180,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		eye_camera.rotation.x = clamp(eye_camera.rotation.x, deg_to_rad(-80), deg_to_rad(80))
 
 	# Place single block
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
 		if world_builder != null and world_builder.has_method("place_one_block_from_ray"):
 			var origin: Vector3 = eye_camera.global_transform.origin
 			var dir: Vector3 = -eye_camera.global_transform.basis.z
@@ -164,9 +193,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_last_ray_pitch = rad_to_deg(asin(-dir.normalized().y))
 			var horizontal_dir = Vector2(dir.x, dir.z).normalized()
 			_last_ray_yaw = rad_to_deg(atan2(horizontal_dir.x, horizontal_dir.y))
-			
-			var ok: bool = world_builder.place_one_block_from_ray(origin, dir, click_block_id, click_max_distance)
-			
+			var ok: bool
+			click_block_id = _hotbar.get_selected_item().id
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				ok= world_builder.place_one_block_from_ray(origin, dir, click_block_id, click_max_distance, true)
+			else:
+				ok = world_builder.place_one_block_from_ray(origin, dir, click_block_id, click_max_distance, false)
 			if ok:
 				# Get the actual hit point for feedback
 				var hit = _vt.raycast(origin, dir.normalized(), click_max_distance)
@@ -185,6 +217,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Hotkey structure placement (raycast-based)
 	if event is InputEventKey and event.pressed:
+		if _hotbar_keys.has(event.keycode):
+			var slot_index = _hotbar_keys[event.keycode]
+			_hotbar.select_slot(slot_index)
+			return
+				
 		var structure_type = ""
 		var structure_name = ""
 		
@@ -231,10 +268,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_last_action = "Failed to place " + structure_name
 				_last_toggles = "Failed: " + structure_name
 	
-	# Hotkey structure placement (above player - no raycast)
-	if event is InputEventKey and event.pressed:
-		var structure_type = ""
-		var structure_name = ""
 		var offset_up = 5.0  # How many blocks above player
 		
 		if event.keycode == KEY_V:
@@ -348,3 +381,7 @@ func _update_debug_hud(_delta: float) -> void:
 	]
 	if _last_toggles != "":
 		_hud_label.text += "  last toggle: %s\n" % _last_toggles
+
+
+func _on_inventory_changed() -> void:
+	pass # Replace with function body.

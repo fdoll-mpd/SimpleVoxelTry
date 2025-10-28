@@ -30,19 +30,15 @@ surface_material_override/0 = SubResource("StandardMaterial3D_4l37u")
 current = true
 script = ExtResource("2_05nuq")
 
+[node name="VoxelViewer" type="VoxelViewer" parent="Head"]
+view_distance = 1024
+enabled_in_editor = true
+
 [node name="Crosshair" type="Sprite2D" parent="."]
 texture = ExtResource("3_4l37u")
 script = ExtResource("4_w62xf")
 
 [node name="Hotbar" parent="." instance=ExtResource("5_uf5el")]
-offset_top = 551.0
-offset_right = 1152.0
-offset_bottom = 648.0
 
 [node name="Inventory" parent="." instance=ExtResource("6_adpxr")]
-visible = false
-
-[node name="VoxelViewer" type="VoxelViewer" parent="."]
-view_distance = 512
-
-[connection signal="changed" from="Inventory" to="." method="_on_inventory_changed"]
+script = null

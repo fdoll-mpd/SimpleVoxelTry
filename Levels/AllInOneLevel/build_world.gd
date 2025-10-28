@@ -3,10 +3,28 @@ extends Node3D
 @export var default_place_block_id: int = 1
 @export var max_place_distance: float = 64.0
 @onready var terrain: VoxelTerrain = $VoxelTerrain
+@onready var _characters_container : Node = $Players
 
+@export var use_voxel_relative_distances: bool = true
+@export var max_place_distance_voxels: int = 64
+
+func world_to_voxel(world_pos: Vector3) -> Vector3i:
+	var local := terrain.to_local(world_pos)
+	return Vector3i(floor(local.x), floor(local.y), floor(local.z))
+
+func voxel_to_world(voxel_pos: Vector3) -> Vector3:
+	return terrain.to_global(voxel_pos)
+
+# Size of one voxel in world units (assumes uniform scale).
+func voxel_size_world() -> float:
+	var s := terrain.global_transform.basis.get_scale().abs()
+	if absf(s.x - s.y) > 0.0001 or absf(s.x - s.z) > 0.0001:
+		push_warning("VoxelTerrain is non-uniformly scaled; using X component: %f" % s.x)
+	return s.x
+	
 var _vt: VoxelTool = null
 var _hud: Label
-
+const CharacterScene = preload("res://Entities/Player/TestCharacter.tscn")
 
 func _get_tool() -> VoxelTool:
 	# Cache the tool – getting it every time is a little slower.
@@ -14,13 +32,13 @@ func _get_tool() -> VoxelTool:
 		_vt = terrain.get_voxel_tool()
 	return _vt
 
-func world_to_voxel(world_pos: Vector3) -> Vector3i:
-	var local := terrain.to_local(world_pos)  # world -> terrain local
-	return Vector3i(floor(local.x), floor(local.y), floor(local.z))
-
-# Convert voxel coords (terrain-local) to world space.
-func voxel_to_world(voxel_pos: Vector3) -> Vector3:
-	return terrain.to_global(voxel_pos)       # terrain local -> world
+#func world_to_voxel(world_pos: Vector3) -> Vector3i:
+	#var local := terrain.to_local(world_pos)  # world -> terrain local
+	#return Vector3i(floor(local.x), floor(local.y), floor(local.z))
+#
+## Convert voxel coords (terrain-local) to world space.
+#func voxel_to_world(voxel_pos: Vector3) -> Vector3:
+	#return terrain.to_global(voxel_pos)
 
 # =========================
 # BLOCKY (VoxelMesherBlocky)
@@ -78,11 +96,11 @@ func place_sdf_sphere(center: Vector3, radius: float, add: bool = true) -> void:
 
 func make_voxel_plane(corner: Vector3 = Vector3(-20, 3, -20), side: int=50, voxel_id: int = 2):
 	var vt: VoxelTool = _get_tool()
+	var corner_v := world_to_voxel(corner)
 	for x_side in side:
 		for z_side in side:
 			var base := Vector3i(floor(corner.x + x_side), floor(corner.y), floor(corner.z + z_side))
-			var normal := Vector3i(0, 1, 0)
-			var target := base + normal
+			var target := base + Vector3i(0, 1, 0)
 
 			# Editable check (prevents "Area not editable")
 			if not vt.is_area_editable(AABB(Vector3(target), Vector3.ONE)):
@@ -103,17 +121,32 @@ func _ready() -> void:
 
 	# Example blocky placements (IDs depend on your VoxelLibrary setup):
 	# 1) Cube: 8x8x8 of voxel_id=1 centered at (0, 8, 0)
-	place_blocky_cube(Vector3i(0, 8, 0), 8, 1)
-
-	# 2) Rectangle (e.g., 12 x 4 x 6) with voxel_id=2, starting at (-6, 2, -3)
-	place_blocky_box(Vector3i(-6, 2, -3), Vector3i(5, 5, 2), 2) # inclusive end
-
-	# 3) Sphere: radius 6 of voxel_id=3 at (16, 10, 0)
-	place_blocky_sphere(Vector3(16, 10, 0), 6.0, 3)
+	#place_blocky_cube(Vector3i(0, 8, 0), 8, 1)
+#
+	## 2) Rectangle (e.g., 12 x 4 x 6) with voxel_id=2, starting at (-6, 2, -3)
+	#place_blocky_box(Vector3i(-6, 2, -3), Vector3i(5, 5, 2), 2) # inclusive end
+#
+	## 3) Sphere: radius 6 of voxel_id=3 at (16, 10, 0)
+	#place_blocky_sphere(Vector3(16, 10, 0), 6.0, 3)
 
 	_setup_limits_hud()
-	_make_debug_ground_plane()
-
+	print("Bounds: ", terrain.bounds)
+	#_make_debug_ground_plane()
+	
+func get_terrain() -> VoxelTerrain:
+	return terrain
+	
+func _spawn_character(peer_id: int, pos: Vector3) -> Node3D:
+	var node_name = str(peer_id)
+	if _characters_container.has_node(node_name):
+		#_logger.error(str("Character ", peer_id, " already created"))
+		return null
+	var character : Node3D = CharacterScene.instantiate()
+	character.name = node_name
+	character.position = pos
+	character.voxel_terrain_path = get_terrain().get_path()
+	_characters_container.add_child(character)
+	return character
 
 func _setup_limits_hud() -> void:
 	var cl := CanvasLayer.new()
@@ -125,6 +158,7 @@ func _setup_limits_hud() -> void:
 	_hud.position = Vector2(8, 8)
 	_hud.add_theme_color_override("font_color", Color(1,1,1,1))
 	_hud.add_theme_font_size_override("font_size", 14)
+	#cl.add_child(_hud)
 	terrain.debug_set_draw_flag(VoxelTerrain.DEBUG_DRAW_VOLUME_BOUNDS, true)
 		
 func _unhandled_input(event: InputEvent) -> void:
@@ -191,6 +225,9 @@ func _make_debug_ground_plane(
 	col.shape = box
 	sb.add_child(col)
 	add_child(sb)
+	
+	print_world_limits_summary(global_transform.origin, 200000, 2)
+
 
 
 func draw_local_grid(cell: int = 1, half_extent: int = 16) -> void:
@@ -234,7 +271,7 @@ func _update_limits_hud() -> void:
 	sb += "  max: (%.1f, %.1f, %.1f)\n" % [b_max.x, b_max.y, b_max.z]
 	sb += "  size: (%.1f, %.1f, %.1f)\n" % [b.size.x, b.size.y, b.size.z]
 
-	# 4) Viewers and their load AABBs (terrain-local)
+
 	for v in viewers:
 		var center_local := terrain.to_local(v.global_transform.origin)
 		var h := float(v.view_distance)
@@ -281,7 +318,7 @@ func _update_limits_hud() -> void:
 # =========================
 
 # Place a single block using proper raycast - NO FALLBACK
-func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_id: int = -1, max_dist: float = -1.0) -> bool:
+func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_id: int = -1, max_dist: float = -1.0, placing: bool = true) -> bool:
 	var vt := _get_tool()
 	if vt == null:
 		print("Could not get voxel tool")
@@ -290,7 +327,9 @@ func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 	if block_id < 0:
 		block_id = default_place_block_id
 	if max_dist <= 0.0:
-		max_dist = max_place_distance
+		#max_dist = max_place_distance
+		var _vox_size := voxel_size_world()
+		max_dist = (float(max_place_distance_voxels) * _vox_size if use_voxel_relative_distances else max_place_distance)
 	
 	vt.set_raycast_normal_enabled(true)
 
@@ -323,7 +362,7 @@ func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 		_axis_step(n.y),
 		_axis_step(n.z)
 	)
-
+	
 	var place_pos: Vector3i = hit_pos + step
 
 	# Debug info: which voxel, which face/normal, and where we’ll place
@@ -336,11 +375,16 @@ func place_one_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 	# (optional) bounds/editability check around the place position
 	if not vt.is_area_editable(AABB(Vector3(place_pos), Vector3.ONE)):
 		return false
-
+	
 	vt.mode = VoxelTool.MODE_SET
 	vt.channel = VoxelBuffer.CHANNEL_TYPE
-	vt.value = block_id
-	vt.do_point(place_pos)
+	if placing:
+		vt.value = block_id
+		vt.do_point(place_pos)
+	else:
+		vt.value = 0
+		vt.do_point(hit_pos)
+		
 	return true
 
 func _axis_step(n: float) -> int:
@@ -382,7 +426,10 @@ func place_structure_from_ray(world_origin: Vector3, world_dir: Vector3, structu
 	if block_id < 0:
 		block_id = default_place_block_id
 	if max_dist <= 0.0:
-		max_dist = max_place_distance
+		#max_dist = max_place_distance
+		var _vox_size := voxel_size_world()
+		max_dist = (float(max_place_distance_voxels) * _vox_size if use_voxel_relative_distances else max_place_distance)
+
 	
 	vt.set_raycast_normal_enabled(true)
 
@@ -460,6 +507,7 @@ func place_structure_at_position(world_pos: Vector3, structure_type: String, blo
 		block_id = default_place_block_id
 	
 	# Convert world position to terrain local space
+	print("Trying to place at", world_pos)
 	var local_pos := terrain.to_local(world_pos)
 	var base_pos := Vector3i(floor(local_pos.x), floor(local_pos.y), floor(local_pos.z))
 	
@@ -477,8 +525,10 @@ func place_structure_at_position(world_pos: Vector3, structure_type: String, blo
 			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
 				print("Cube placement area not editable")
 				return false
-			
 			place_blocky_box(begin, end, block_id)
+			print("Placed structure at ", begin, " to ", end)
+			print_world_limits_summary(global_transform.origin, 200000, 2)
+
 			return true
 			
 		"box_4x4x8":
@@ -489,8 +539,10 @@ func place_structure_at_position(world_pos: Vector3, structure_type: String, blo
 			if not vt.is_area_editable(AABB(Vector3(begin), check_size)):
 				print("Box placement area not editable")
 				return false
-			
 			place_blocky_box(begin, end, block_id)
+			print("Placed structure at ", begin, " to ", end)
+			print_world_limits_summary(global_transform.origin, 200000, 2)
+
 			return true
 			
 		"sphere_r4":
@@ -503,7 +555,11 @@ func place_structure_at_position(world_pos: Vector3, structure_type: String, blo
 				print("Sphere placement area not editable")
 				return false
 			
+			
 			place_blocky_sphere(sphere_center, radius, block_id)
+			print("Placed structure at ", sphere_center, " with radius of ", radius)
+			print_world_limits_summary(global_transform.origin, 200000, 2)
+
 			return true
 		
 		"platform_10x10":
@@ -517,7 +573,10 @@ func place_structure_at_position(world_pos: Vector3, structure_type: String, blo
 				print("Platform placement area not editable")
 				return false
 			
+			print("Placed structure at ", begin, " to ", end)
 			place_blocky_box(begin, end, block_id)
+			print_world_limits_summary(global_transform.origin, 200000, 2)
+
 			return true
 	
 	print("Unknown structure type: ", structure_type)
@@ -531,7 +590,10 @@ func paint_hit_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 	if block_id < 0:
 		block_id = default_place_block_id
 	if max_dist <= 0.0:
-		max_dist = max_place_distance
+		#max_dist = max_place_distance
+		var _vox_size := voxel_size_world()
+		max_dist = (float(max_place_distance_voxels) * _vox_size if use_voxel_relative_distances else max_place_distance)
+
 
 	vt.set_raycast_normal_enabled(false)
 	var hit := vt.raycast(world_origin, world_dir.normalized(), max_dist)
@@ -549,3 +611,217 @@ func paint_hit_block_from_ray(world_origin: Vector3, world_dir: Vector3, block_i
 	vt.value = block_id
 	vt.do_point(target)
 	return true
+
+
+func try_place_then_air(p: Vector3i, block_id: int = 2) -> bool:
+	var vt: VoxelTool = _get_tool()
+	if not is_voxel_editable(p):
+		return false
+	vt.channel = VoxelBuffer.CHANNEL_TYPE
+	vt.mode = VoxelTool.MODE_ADD
+	vt.value = block_id
+	vt.do_point(p)
+	vt.value = 0
+	vt.do_point(p)
+	return true
+		
+
+func is_voxel_editable(p: Vector3i) -> bool:
+	var vt: VoxelTool = _get_tool()
+	return vt.is_area_editable(AABB(Vector3(p), Vector3.ONE))
+
+func probe_limit_along_axis(start_v: Vector3i, axis: Vector3i, max_steps: int = 100000, test_block_id: int = 2) -> Dictionary:
+	var vt: VoxelTool = _get_tool()
+	var last_ok := start_v
+	var steps := 0
+	var p := start_v
+	while steps < max_steps:
+		p += axis
+		if not vt.is_area_editable(AABB(Vector3(p), Vector3.ONE)):
+			break
+		# write + revert (verifies we can actually touch the voxel)
+		vt.channel = VoxelBuffer.CHANNEL_TYPE
+		vt.mode = VoxelTool.MODE_ADD
+		vt.value = test_block_id
+		vt.do_point(p)
+		vt.value = 0
+		vt.do_point(p)
+		last_ok = p
+		steps += 1
+	var reason := "non_editable" if steps < max_steps else "max_steps"
+	return {"last_ok": last_ok, "steps": steps, "reason": reason}
+
+func test_world_limits(start_world: Vector3 = Vector3.ZERO, max_steps: int = 100000, test_block_id: int = 2) -> Dictionary:
+	var start_v := world_to_voxel(start_world)
+	var results := {
+		"+X": probe_limit_along_axis(start_v, Vector3i(1, 0, 0), max_steps, test_block_id),
+		"-X": probe_limit_along_axis(start_v, Vector3i(-1, 0, 0), max_steps, test_block_id),
+		"+Y": probe_limit_along_axis(start_v, Vector3i(0, 1, 0), max_steps, test_block_id),
+		"-Y": probe_limit_along_axis(start_v, Vector3i(0, -1, 0), max_steps, test_block_id),
+		"+Z": probe_limit_along_axis(start_v, Vector3i(0, 0, 1), max_steps, test_block_id),
+		"-Z": probe_limit_along_axis(start_v, Vector3i(0, 0, -1), max_steps, test_block_id),
+	}
+	if has_method("voxel_to_world"):
+		for k in results.keys():
+			var v: Vector3i = results[k]["last_ok"]
+			results[k]["last_ok_world"] = voxel_to_world(v)
+	return results
+
+func print_world_limits_summary(start_world: Vector3 = Vector3.ZERO, max_steps: int = 100000, test_block_id: int = 2) -> void:
+	var r := test_world_limits(start_world, max_steps, test_block_id)
+	print("--- World Limits from ", start_world, " ---")
+	for k in ["+X","-X","+Y","-Y","+Z","-Z"]:
+		var e = r[k]
+		var v = e["last_ok"]
+		var w = (e["last_ok_world"] if e.has("last_ok_world") else null)
+		print("%s  steps=%d  last_ok_voxel=%s%s  reason=%s" % [
+			k, int(e["steps"]), str(v),
+			("  last_ok_world=%s" % str(w) if w != null else ""),
+			str(e["reason"]),
+		])
+	#draw_world_border_box()
+#
+#const _WORLD_BORDER_NODE_NAME := "WorldBorderViz"
+#
+## Remove existing border viz node (if any)
+#func _clear_world_border_viz() -> void:
+	#var old := get_node_or_null(_WORLD_BORDER_NODE_NAME)
+	#if old:
+		#old.queue_free()
+#
+## Build a transparent fill box material
+#func _make_transparent_fill_material(color: Color = Color(0.2, 0.6, 1.0, 0.12)) -> StandardMaterial3D:
+	#var m := StandardMaterial3D.new()
+	#m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	#m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	#m.albedo_color = color
+	#m.cull_mode = BaseMaterial3D.CULL_BACK
+	#m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+	#return m
+#
+## Build a line material for edges
+#func _make_line_material(color: Color = Color(0.2, 0.6, 1.0, 0.9)) -> StandardMaterial3D:
+	#var m := StandardMaterial3D.new()
+	#m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	#m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	#m.albedo_color = color
+	#m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	#m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+	#return m
+#
+## Utility: convert voxel->world using helper if present, otherwise terrain transform
+#func _v2w(v: Vector3) -> Vector3:
+	#if has_method("voxel_to_world"):
+		#return voxel_to_world(v)
+	#else:
+		#return terrain.to_global(v)
+#
+## Compute a world-space AABB of editable region around start_world by probing ±X/±Y/±Z
+## Returns {min_v, max_v, min_world, max_world, size_world, center_world, results}
+#func compute_world_limit_aabb(start_world: Vector3 = Vector3.ZERO, max_steps: int = 200000, test_block_id: int = 2) -> Dictionary:
+	#if not has_method("test_world_limits"):
+		#push_error("test_world_limits() not found; add probing helpers first.")
+		#return {}
+	#var res := test_world_limits(start_world, max_steps, test_block_id)
+#
+	#var vx_min := int(res["-X"]["last_ok"].x)
+	#var vx_max := int(res["+X"]["last_ok"].x)
+	#var vy_min := int(res["-Y"]["last_ok"].y)
+	#var vy_max := int(res["+Y"]["last_ok"].y)
+	#var vz_min := int(res["-Z"]["last_ok"].z)
+	#var vz_max := int(res["+Z"]["last_ok"].z)
+#
+	#var min_v := Vector3i(vx_min, vy_min, vz_min)
+	#var max_v := Vector3i(vx_max, vy_max, vz_max)
+#
+	## World corners: min corner at voxel min, max corner at voxel (max+1) since voxels occupy [i, i+1)
+	#var min_world := _v2w(Vector3(min_v))
+	#var max_world := _v2w(Vector3(max_v + Vector3i.ONE))
+	#var size_world := max_world - min_world
+	#var center_world := (min_world + max_world) * 0.5
+#
+	#return {
+		#"min_v": min_v,
+		#"max_v": max_v,
+		#"min_world": min_world,
+		#"max_world": max_world,
+		#"size_world": size_world,
+		#"center_world": center_world,
+		#"results": res,
+	#}
+#
+## Create an ImmediateMesh that draws 12 edges of a box from (0,0,0) to size_world
+#func _make_wire_box(size_world: Vector3, material: Material) -> Mesh:
+	#var im := ImmediateMesh.new()
+	#im.surface_begin(Mesh.PRIMITIVE_LINES, material)
+#
+	#var sx := size_world.x
+	#var sy := size_world.y
+	#var sz := size_world.z
+#
+	#var p000 := Vector3(0, 0, 0)
+	#var p100 := Vector3(sx, 0, 0)
+	#var p010 := Vector3(0, sy, 0)
+	#var p110 := Vector3(sx, sy, 0)
+	#var p001 := Vector3(0, 0, sz)
+	#var p101 := Vector3(sx, 0, sz)
+	#var p011 := Vector3(0, sy, sz)
+	#var p111 := Vector3(sx, sy, sz)
+#
+	## bottom rectangle
+	#im.surface_add_vertex(p000); im.surface_add_vertex(p100)
+	#im.surface_add_vertex(p100); im.surface_add_vertex(p101)
+	#im.surface_add_vertex(p101); im.surface_add_vertex(p001)
+	#im.surface_add_vertex(p001); im.surface_add_vertex(p000)
+#
+	## top rectangle
+	#im.surface_add_vertex(p010); im.surface_add_vertex(p110)
+	#im.surface_add_vertex(p110); im.surface_add_vertex(p111)
+	#im.surface_add_vertex(p111); im.surface_add_vertex(p011)
+	#im.surface_add_vertex(p011); im.surface_add_vertex(p010)
+#
+	## verticals
+	#im.surface_add_vertex(p000); im.surface_add_vertex(p010)
+	#im.surface_add_vertex(p100); im.surface_add_vertex(p110)
+	#im.surface_add_vertex(p101); im.surface_add_vertex(p111)
+	#im.surface_add_vertex(p001); im.surface_add_vertex(p011)
+#
+	#im.surface_end()
+	#return im
+#
+## Draw (or redraw) the world border from a given world start position.
+## If a previous box exists, it is removed first.
+#func draw_world_border_box(start_world: Vector3 = Vector3.ZERO, max_steps: int = 200000, test_block_id: int = 2, fill_color: Color = Color(0.2, 0.6, 1.0, 0.12), line_color: Color = Color(0.2, 0.6, 1.0, 0.9)) -> void:
+	#_clear_world_border_viz()
+	#var data := compute_world_limit_aabb(start_world, max_steps, test_block_id)
+	#if data.is_empty():
+		#return
+#
+	#var root := Node3D.new()
+	#root.name = _WORLD_BORDER_NODE_NAME
+	#add_child(root)
+#
+	#var size_world: Vector3 = data["size_world"]
+	#var min_world: Vector3 = data["min_world"]
+	#var center_world: Vector3 = data["center_world"]
+#
+	## Transparent fill box
+	#var box := MeshInstance3D.new()
+	#var bm := BoxMesh.new()
+	#bm.size = size_world
+	#box.mesh = bm
+	#box.material_override = _make_transparent_fill_material(fill_color)
+	#box.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	#box.global_transform = Transform3D(Basis.IDENTITY, center_world)
+	#root.add_child(box)
+#
+	## Wire edges
+	#var wire := MeshInstance3D.new()
+	#wire.mesh = _make_wire_box(size_world, _make_line_material(line_color))
+	#wire.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	#wire.global_transform = Transform3D(Basis.IDENTITY, min_world)
+	#root.add_child(wire)
+#
+## Convenience: erase the current border box, if any
+#func erase_world_border_box() -> void:
+	#_clear_world_border_viz()

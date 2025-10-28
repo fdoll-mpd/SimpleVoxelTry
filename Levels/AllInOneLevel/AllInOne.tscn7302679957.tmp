@@ -1,7 +1,6 @@
-[gd_scene load_steps=11 format=3 uid="uid://de32hxl7oh4y8"]
+[gd_scene load_steps=10 format=3 uid="uid://de32hxl7oh4y8"]
 
 [ext_resource type="Script" uid="uid://8riey6gamasa" path="res://Levels/AllInOneLevel/build_world.gd" id="1_rvpqm"]
-[ext_resource type="VoxelGeneratorScript" uid="uid://26ye6aqjgic0" path="res://Levels/AllInOneLevel/Generator/world_generator.tres" id="2_7iva8"]
 [ext_resource type="VoxelMesherBlocky" uid="uid://c6l3pdnhmvhqp" path="res://CopyFrom/BlockLib/blocks/mesher.tres" id="2_e8bwk"]
 [ext_resource type="PackedScene" uid="uid://bpgo0udxilfai" path="res://Entities/Player/TestCharacter.tscn" id="2_img8n"]
 [ext_resource type="Script" uid="uid://csinpqgk03ax4" path="res://CopyFrom/BlockLib/blocks/blocks.gd" id="4_2bg0k"]
@@ -18,10 +17,16 @@ sky = SubResource("Sky_rvpqm")
 
 [sub_resource type="VoxelStreamRegionFiles" id="VoxelStreamRegionFiles_e8bwk"]
 directory = "res://Levels/AllInOneLevel/Save"
+region_size_po2 = 8
+block_size_po2 = 8
 
 [node name="AllInOne" type="Node3D"]
 transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
 script = ExtResource("1_rvpqm")
+default_place_block_id = null
+max_place_distance = null
+use_voxel_relative_distances = null
+max_place_distance_voxels = null
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_img8n")
@@ -31,14 +36,13 @@ transform = Transform3D(0.70710677, -0.35355338, 0.6123724, 0, 0.8660254, 0.5, -
 
 [node name="VoxelTerrain" type="VoxelTerrain" parent="."]
 stream = SubResource("VoxelStreamRegionFiles_e8bwk")
-generator = ExtResource("2_7iva8")
 mesher = ExtResource("2_e8bwk")
 gi_mode = 1
 max_view_distance = 512
-generate_collisions = false
 run_stream_in_editor = false
 
 [node name="TestCharacter" parent="." instance=ExtResource("2_img8n")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 0)
 voxel_terrain_path = NodePath("../VoxelTerrain")
 world_builder_path = NodePath("..")
 
@@ -47,5 +51,3 @@ script = ExtResource("4_2bg0k")
 
 [node name="Items" type="Node" parent="."]
 script = ExtResource("5_88mlj")
-
-[node name="Players" type="Node" parent="."]

@@ -1,0 +1,6 @@
+[gd_resource type="VoxelGeneratorScript" load_steps=2 format=3 uid="uid://26ye6aqjgic0"]
+
+[ext_resource type="Script" uid="uid://nc74h8jped8v" path="res://Levels/AllInOneLevel/Generator/generator_flat.gd" id="1_vk7kh"]
+
+[resource]
+script = ExtResource("1_vk7kh")
