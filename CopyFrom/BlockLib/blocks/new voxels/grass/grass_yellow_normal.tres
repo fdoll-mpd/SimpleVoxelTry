@@ -1,0 +1,13 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://c82oyl14smryp"]
+
+[ext_resource type="ArrayMesh" uid="uid://cxcr3ot4e0ri7" path="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass.obj" id="1_fpy8q"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_djmmn"]
+albedo_color = Color(0.74509805, 0.63529414, 0.26666668, 1)
+
+[resource]
+resource_name = "grass_yellow_normal"
+collision_aabbs = Array[AABB]([AABB(0, 0, 0, 1, 1, 1)])
+material_override_0 = SubResource("StandardMaterial3D_djmmn")
+collision_enabled_0 = true
+mesh = ExtResource("1_fpy8q")

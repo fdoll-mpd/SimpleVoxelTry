@@ -1,0 +1,13 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://jb4sw1dx4eef"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4ixfv"]
+albedo_color = Color(0.72156864, 0.4509804, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_km8ts"]
+material = SubResource("StandardMaterial3D_4ixfv")
+custom_aabb = AABB(0.5, 0.5, 0.5, 0, 0, 0)
+
+[resource]
+color = Color(0.72156864, 0.4509804, 0.2, 1)
+collision_enabled_0 = true
+mesh = SubResource("BoxMesh_km8ts")

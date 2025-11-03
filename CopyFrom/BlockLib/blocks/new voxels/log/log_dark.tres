@@ -1,0 +1,13 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://u4o6413ps2cf"]
+
+[ext_resource type="ArrayMesh" uid="uid://b8tebk1cqks47" path="res://CopyFrom/BlockLib/blocks/new voxels/log/log.obj" id="1_mgr6d"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_psebs"]
+albedo_color = Color(0.28627452, 0.21176471, 0.050980393, 1)
+
+[resource]
+resource_name = "log_dark"
+collision_aabbs = Array[AABB]([AABB(0, 0, 0, 1, 1, 1)])
+material_override_0 = SubResource("StandardMaterial3D_psebs")
+collision_enabled_0 = true
+mesh = ExtResource("1_mgr6d")

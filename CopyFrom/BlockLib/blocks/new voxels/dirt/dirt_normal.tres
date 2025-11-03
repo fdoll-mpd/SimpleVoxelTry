@@ -1,0 +1,12 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://dbfddavhfqcxf"]
+
+[ext_resource type="ArrayMesh" uid="uid://b7gb4tpunkmyu" path="res://CopyFrom/BlockLib/blocks/new voxels/dirt/dirt.obj" id="1_b5sb6"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n41bm"]
+albedo_color = Color(0.48235294, 0.25490198, 0.11764706, 1)
+
+[resource]
+resource_name = "dirt_normal"
+material_override_0 = SubResource("StandardMaterial3D_n41bm")
+collision_enabled_0 = true
+mesh = ExtResource("1_b5sb6")

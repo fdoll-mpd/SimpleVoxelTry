@@ -34,7 +34,7 @@ stream = SubResource("VoxelStreamRegionFiles_e8bwk")
 generator = ExtResource("2_7iva8")
 mesher = ExtResource("2_e8bwk")
 gi_mode = 1
-max_view_distance = 512
+max_view_distance = 256
 generate_collisions = false
 run_stream_in_editor = false
 

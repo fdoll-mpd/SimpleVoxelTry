@@ -1,0 +1,14 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://dv4clv8nwlpck"]
+
+[ext_resource type="ArrayMesh" uid="uid://blxh2e22hemwu" path="res://CopyFrom/BlockLib/blocks/new voxels/copper/copper.obj" id="1_cc0vm"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xdpg2"]
+albedo_color = Color(0.87153655, 0.57309747, 0.30797708, 1)
+
+[resource]
+resource_name = "copper_bright"
+color = Color(0.72156864, 0.4509804, 0.2, 1)
+collision_aabbs = Array[AABB]([AABB(0, 0, 0, 1, 1, 1)])
+material_override_0 = SubResource("StandardMaterial3D_xdpg2")
+collision_enabled_0 = true
+mesh = ExtResource("1_cc0vm")

@@ -4,6 +4,30 @@ extends VoxelGeneratorScript
 const Structure = preload("./structure.gd")
 const TreeGenerator = preload("./tree_generator.gd")
 const VillageGenerator = preload("./village_generator.gd")
+const CubeGenerator = preload("./cube_generator.gd")
+
+# Helper: paste a Structure if it overlaps this block
+func _place_if_intersect(buffer: VoxelBuffer, origin: Vector3i, s: Structure, lower_world: Vector3i) -> void:
+	if s == null: return
+	var vt := buffer.get_voxel_tool()
+	var block_size := buffer.get_size()
+
+	var aabb_block := AABB(Vector3(origin), Vector3(block_size))
+	var aabb_struct := AABB(Vector3(lower_world), Vector3(s.voxels.get_size()))
+
+	if aabb_struct.intersects(aabb_block):
+		var local_pos := lower_world - origin
+		vt.paste_masked(
+			local_pos,
+			s.voxels,
+			1 << VoxelBuffer.CHANNEL_TYPE,
+			VoxelBuffer.CHANNEL_TYPE,
+			-1  # don't mask out anything; full paste
+		)
+var _cube_structure: Structure = null
+var enable_copper_cube := true
+var copper_cube_size := 50
+var copper_cube_seed := 20251031  # pick any; change for a different pattern
 
 # Block IDs
 const AIR = 0
@@ -131,6 +155,12 @@ func _init():
 	if _village_structure:
 		_villages_min_y = SURFACE_Y
 		_villages_max_y = SURFACE_Y + int(_village_structure.voxels.get_size().y) + 5
+	
+	if enable_copper_cube:
+		var cube_gen := CubeGenerator.new()
+		_cube_structure = cube_gen.generate(copper_cube_size, 5, copper_cube_seed)
+		if _cube_structure:
+			print("Copper cube ready: size = ", _cube_structure.voxels.get_size(), " offset = ", _cube_structure.offset)
 
 	print("Trees Y range: ", _trees_min_y, " to ", _trees_max_y)
 	print("Village Y range: ", _villages_min_y, " to ", _villages_max_y)
@@ -238,9 +268,26 @@ func _generate_block(buffer: VoxelBuffer, origin_in_voxels: Vector3i, lod: int) 
 					AIR
 				)
 	
+	if _cube_structure:
+		var voxel_tool := buffer.get_voxel_tool()
+		var block_aabb := AABB(Vector3(origin_in_voxels), buffer.get_size())
+
+		var cube_center := Vector3(0, SURFACE_Y + 1 + int(_cube_structure.voxels.get_size().y) / 2, 0)
+		var lower := cube_center - _cube_structure.offset
+		var cube_aabb := AABB(lower, Vector3(_cube_structure.voxels.get_size()))
+
+		if cube_aabb.intersects(block_aabb):
+			var local_pos := lower - Vector3(origin_in_voxels)
+			voxel_tool.paste_masked(
+				local_pos,
+				_cube_structure.voxels,
+				1 << VoxelBuffer.CHANNEL_TYPE,
+				VoxelBuffer.CHANNEL_TYPE,
+				AIR # don’t overwrite air inside structure
+			)
+	
 	buffer.compress_uniform_channels()
 
-# ----- Helpers -----
 
 static func _get_chunk_seed_2d(cpos: Vector3) -> int:
 	return int(cpos.x) ^ (31 * int(cpos.z))

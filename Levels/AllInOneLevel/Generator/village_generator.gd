@@ -19,6 +19,7 @@ const STAIRS_PZ := 11
 const GLASS := 12
 const LEAVES := 25
 const DEAD_SHRUB := 26
+const COPPER := 27
 
 var channel := VoxelBuffer.CHANNEL_TYPE
 
@@ -224,8 +225,8 @@ func _build_cottage_house(voxels: Dictionary, o: Vector3i, base_dims: Vector3i, 
 			for z in range(0, sz + 1):
 				# Add cobblestone base (using DIRT as substitute, change to your stone ID)
 				if y < 2 * sy:
-					_set_if_empty(voxels, o + Vector3i(x, y, z), DIRT)
-					_set_if_empty(voxels, o + Vector3i(x, y, d-z-1), DIRT)
+					_set_if_empty(voxels, o + Vector3i(x, y, z), COPPER)
+					_set_if_empty(voxels, o + Vector3i(x, y, d-z-1), COPPER)
 				else:
 					_set_if_empty(voxels, o + Vector3i(x, y, z), _wall_block_for(y, sy))
 					_set_if_empty(voxels, o + Vector3i(x, y, d-z-1), _wall_block_for(y, sy))

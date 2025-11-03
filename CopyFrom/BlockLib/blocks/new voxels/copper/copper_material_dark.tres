@@ -1,0 +1,14 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://co0x7ila416te"]
+
+[ext_resource type="ArrayMesh" uid="uid://blxh2e22hemwu" path="res://CopyFrom/BlockLib/blocks/new voxels/copper/copper.obj" id="1_x0x2r"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bvtji"]
+albedo_color = Color(0.53333336, 0.36078432, 0.14901961, 1)
+
+[resource]
+resource_name = "copper_dark"
+color = Color(0.72156864, 0.4509804, 0.2, 1)
+collision_aabbs = Array[AABB]([AABB(0, 0, 0, 1, 1, 1)])
+material_override_0 = SubResource("StandardMaterial3D_bvtji")
+collision_enabled_0 = true
+mesh = ExtResource("1_x0x2r")

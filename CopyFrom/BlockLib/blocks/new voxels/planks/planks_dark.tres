@@ -1,0 +1,13 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://3bc5bh6dlyhv"]
+
+[ext_resource type="ArrayMesh" uid="uid://mwngcxn2by0w" path="res://CopyFrom/BlockLib/blocks/new voxels/planks/planks.obj" id="1_a8ce0"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gxa47"]
+albedo_color = Color(0.64705884, 0.6, 0.41960785, 1)
+
+[resource]
+resource_name = "plank_dark"
+collision_aabbs = Array[AABB]([AABB(0, 0, 0, 1, 1, 1)])
+material_override_0 = SubResource("StandardMaterial3D_gxa47")
+collision_enabled_0 = true
+mesh = ExtResource("1_a8ce0")

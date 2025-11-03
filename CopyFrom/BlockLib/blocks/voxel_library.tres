@@ -1,4 +1,4 @@
-[gd_resource type="VoxelBlockyLibrary" load_steps=46 format=3 uid="uid://ctn2wqssoxvj5"]
+[gd_resource type="VoxelBlockyLibrary" load_steps=66 format=3 uid="uid://ctn2wqssoxvj5"]
 
 [ext_resource type="ArrayMesh" uid="uid://rq0nk6t5jqyc" path="res://CopyFrom/BlockLib/blocks/grass/grass.obj" id="1"]
 [ext_resource type="ArrayMesh" uid="uid://dmi1fa4udxhx3" path="res://CopyFrom/BlockLib/blocks/dirt/dirt.obj" id="2"]
@@ -16,8 +16,28 @@
 [ext_resource type="ArrayMesh" uid="uid://0i1jxsk65d0u" path="res://CopyFrom/BlockLib/blocks/glass/glass.obj" id="12"]
 [ext_resource type="ArrayMesh" uid="uid://31q4wrlmcpbj" path="res://CopyFrom/BlockLib/blocks/water/water_full.obj" id="13"]
 [ext_resource type="ArrayMesh" uid="uid://ym6qkw5kje5g" path="res://CopyFrom/BlockLib/blocks/water/water_top.obj" id="14"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://cvh6q6tdailmh" path="res://CopyFrom/BlockLib/blocks/new voxels/copper/copper_material_base.tres" id="19_d1a7y"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://dv4clv8nwlpck" path="res://CopyFrom/BlockLib/blocks/new voxels/copper/copper_material_bright.tres" id="20_nj3qp"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://co0x7ila416te" path="res://CopyFrom/BlockLib/blocks/new voxels/copper/copper_material_dark.tres" id="21_q4owv"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://yhgpau64vf68" path="res://CopyFrom/BlockLib/blocks/new voxels/concrete/concrete_base.tres" id="22_wg0l6"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://do04twjkw2u34" path="res://CopyFrom/BlockLib/blocks/new voxels/concrete/concrete_normal.tres" id="23_u17ih"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://bioppmyexblrp" path="res://CopyFrom/BlockLib/blocks/new voxels/concrete/concrete_dark.tres" id="24_yqkqu"]
 [ext_resource type="ArrayMesh" uid="uid://c2lwrnrx0on2g" path="res://CopyFrom/BlockLib/blocks/leaves/leaves.obj" id="25"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://dinr3aysbnv5t" path="res://CopyFrom/BlockLib/blocks/new voxels/planks/planks_light.tres" id="25_d1a7y"]
 [ext_resource type="ArrayMesh" uid="uid://bhkxvih1xa2a0" path="res://CopyFrom/BlockLib/blocks/dead_shrub/dead_shrub.obj" id="26"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://3bc5bh6dlyhv" path="res://CopyFrom/BlockLib/blocks/new voxels/planks/planks_dark.tres" id="26_nj3qp"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://2mxy6tme31v" path="res://CopyFrom/BlockLib/blocks/new voxels/planks/planks_normal.tres" id="27_q4owv"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://u4o6413ps2cf" path="res://CopyFrom/BlockLib/blocks/new voxels/log/log_dark.tres" id="28_wg0l6"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://dbwhxiqdkcumd" path="res://CopyFrom/BlockLib/blocks/new voxels/log/log_normal.tres" id="29_u17ih"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://bj50irvs61pgt" path="res://CopyFrom/BlockLib/blocks/new voxels/log/log_light.tres" id="30_yqkqu"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://dbfddavhfqcxf" path="res://CopyFrom/BlockLib/blocks/new voxels/dirt/dirt_normal.tres" id="31_oys3s"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://cw0ou05hpxcx1" path="res://CopyFrom/BlockLib/blocks/new voxels/dirt/dirt_light.tres" id="32_wb34c"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://jmfatwr7svsd" path="res://CopyFrom/BlockLib/blocks/new voxels/dirt/dirt_dark.tres" id="33_itvsc"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://o234sw1fs7vg" path="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass_green_dark.tres" id="34_1i3lg"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://enoof8yangld" path="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass_green_normal.tres" id="34_40m4v"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://b2eeogqy48uk5" path="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass_green_light.tres" id="34_htvqn"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://c82oyl14smryp" path="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass_yellow_normal.tres" id="35_1i3lg"]
+[ext_resource type="VoxelBlockyModelMesh" uid="uid://c2adw4vu6s0vp" path="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass_yellow_light.tres" id="35_3xtjb"]
 
 [sub_resource type="VoxelBlockyModelEmpty" id="VoxelBlockyModelEmpty_mk2sr"]
 resource_name = "air"
@@ -197,4 +217,4 @@ collision_enabled_0 = true
 mesh = ExtResource("26")
 
 [resource]
-models = Array[VoxelBlockyModel]([SubResource("VoxelBlockyModelEmpty_mk2sr"), SubResource("VoxelBlockyModelMesh_7h3nj"), SubResource("VoxelBlockyModelMesh_7ws3s"), SubResource("VoxelBlockyModelMesh_dgg18"), SubResource("VoxelBlockyModelMesh_82a53"), SubResource("VoxelBlockyModelMesh_rid6c"), SubResource("VoxelBlockyModelMesh_w6frs"), SubResource("VoxelBlockyModelMesh_b3d46"), SubResource("VoxelBlockyModelMesh_ilklx"), SubResource("VoxelBlockyModelMesh_8o2q5"), SubResource("VoxelBlockyModelMesh_dos6x"), SubResource("VoxelBlockyModelMesh_ldqsp"), SubResource("VoxelBlockyModelMesh_rqv2x"), SubResource("VoxelBlockyModelMesh_lt74g"), SubResource("VoxelBlockyModelMesh_rydis"), SubResource("VoxelBlockyModelMesh_k70eq"), SubResource("VoxelBlockyModelMesh_7pgsh"), SubResource("VoxelBlockyModelMesh_qbgg8"), SubResource("VoxelBlockyModelMesh_iqgm8"), SubResource("VoxelBlockyModelMesh_1mglx"), SubResource("VoxelBlockyModelMesh_udleu"), SubResource("VoxelBlockyModelMesh_p61kv"), SubResource("VoxelBlockyModelMesh_txenr"), SubResource("VoxelBlockyModelMesh_ruhud"), SubResource("VoxelBlockyModelMesh_5qhvr"), SubResource("VoxelBlockyModelMesh_g6mep"), SubResource("VoxelBlockyModelMesh_kcviq")])
+models = Array[VoxelBlockyModel]([SubResource("VoxelBlockyModelEmpty_mk2sr"), SubResource("VoxelBlockyModelMesh_7h3nj"), SubResource("VoxelBlockyModelMesh_7ws3s"), SubResource("VoxelBlockyModelMesh_dgg18"), SubResource("VoxelBlockyModelMesh_82a53"), SubResource("VoxelBlockyModelMesh_rid6c"), SubResource("VoxelBlockyModelMesh_w6frs"), SubResource("VoxelBlockyModelMesh_b3d46"), SubResource("VoxelBlockyModelMesh_ilklx"), SubResource("VoxelBlockyModelMesh_8o2q5"), SubResource("VoxelBlockyModelMesh_dos6x"), SubResource("VoxelBlockyModelMesh_ldqsp"), SubResource("VoxelBlockyModelMesh_rqv2x"), SubResource("VoxelBlockyModelMesh_lt74g"), SubResource("VoxelBlockyModelMesh_rydis"), SubResource("VoxelBlockyModelMesh_k70eq"), SubResource("VoxelBlockyModelMesh_7pgsh"), SubResource("VoxelBlockyModelMesh_qbgg8"), SubResource("VoxelBlockyModelMesh_iqgm8"), SubResource("VoxelBlockyModelMesh_1mglx"), SubResource("VoxelBlockyModelMesh_udleu"), SubResource("VoxelBlockyModelMesh_p61kv"), SubResource("VoxelBlockyModelMesh_txenr"), SubResource("VoxelBlockyModelMesh_ruhud"), SubResource("VoxelBlockyModelMesh_5qhvr"), SubResource("VoxelBlockyModelMesh_g6mep"), SubResource("VoxelBlockyModelMesh_kcviq"), ExtResource("19_d1a7y"), ExtResource("20_nj3qp"), ExtResource("21_q4owv"), ExtResource("22_wg0l6"), ExtResource("23_u17ih"), ExtResource("24_yqkqu"), ExtResource("25_d1a7y"), ExtResource("26_nj3qp"), ExtResource("27_q4owv"), ExtResource("28_wg0l6"), ExtResource("29_u17ih"), ExtResource("30_yqkqu"), ExtResource("31_oys3s"), ExtResource("32_wb34c"), ExtResource("33_itvsc"), ExtResource("34_htvqn"), ExtResource("35_1i3lg"), ExtResource("35_3xtjb"), ExtResource("34_1i3lg"), ExtResource("34_40m4v"), ExtResource("34_htvqn")])

@@ -43,6 +43,6 @@ offset_bottom = 648.0
 visible = false
 
 [node name="VoxelViewer" type="VoxelViewer" parent="."]
-view_distance = 512
+view_distance = 256
 
 [connection signal="changed" from="Inventory" to="." method="_on_inventory_changed"]

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cxcr3ot4e0ri7"
+path="res://.godot/imported/grass.obj-96d21fe2b06d2ee8fbe86aac5e91eb08.mesh"
+
+[deps]
+
+files=["res://.godot/imported/grass.obj-96d21fe2b06d2ee8fbe86aac5e91eb08.mesh"]
+
+source_file="res://CopyFrom/BlockLib/blocks/new voxels/grass/grass.obj"
+dest_files=["res://.godot/imported/grass.obj-96d21fe2b06d2ee8fbe86aac5e91eb08.mesh", "res://.godot/imported/grass.obj-96d21fe2b06d2ee8fbe86aac5e91eb08.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

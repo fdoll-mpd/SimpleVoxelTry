@@ -1,0 +1,14 @@
+[gd_resource type="VoxelBlockyModelMesh" load_steps=3 format=3 uid="uid://yhgpau64vf68"]
+
+[ext_resource type="ArrayMesh" uid="uid://cj3vylrf15vgk" path="res://CopyFrom/BlockLib/blocks/new voxels/concrete/concrete.obj" id="1_37icg"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lbq0d"]
+albedo_color = Color(0.8235294, 0.81960785, 0.8039216, 1)
+
+[resource]
+resource_name = "concrete_base"
+color = Color(0.8235294, 0.81960785, 0.8039216, 1)
+collision_aabbs = Array[AABB]([AABB(0, 0, 0, 1, 1, 1)])
+material_override_0 = SubResource("StandardMaterial3D_lbq0d")
+collision_enabled_0 = true
+mesh = ExtResource("1_37icg")
