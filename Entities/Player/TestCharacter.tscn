@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://bpgo0udxilfai"]
+[gd_scene load_steps=11 format=3 uid="uid://bpgo0udxilfai"]
 
 [ext_resource type="Script" uid="uid://bbswwnx60gm78" path="res://Entities/Player/test_character.gd" id="1_21ih4"]
 [ext_resource type="Script" uid="uid://b5rjxolwdfhmc" path="res://Entities/Player/eye_camera.gd" id="2_05nuq"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://1cg8xnvnsjoh" path="res://Entities/Player/crosshair.gd" id="4_w62xf"]
 [ext_resource type="PackedScene" uid="uid://dkcajfand0phs" path="res://Entities/Player/Hotbar/Hotbar.tscn" id="5_uf5el"]
 [ext_resource type="PackedScene" uid="uid://cg54toj1o7c2u" path="res://Entities/Player/inventory/inventory.tscn" id="6_adpxr"]
+[ext_resource type="PackedScene" uid="uid://uk7buvjbe8j" path="res://Menus/Debug Menu/VoxelPlaceDebug.tscn" id="7_kk41t"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_21ih4"]
 
@@ -44,5 +45,7 @@ visible = false
 
 [node name="VoxelViewer" type="VoxelViewer" parent="."]
 view_distance = 256
+
+[node name="VoxelPlaceDebug" parent="." instance=ExtResource("7_kk41t")]
 
 [connection signal="changed" from="Inventory" to="." method="_on_inventory_changed"]

@@ -39,7 +39,6 @@ class RawMapping:
 	var block_id := 0
 	var variant_index := 0
 
-
 var _voxel_library := preload("res://CopyFrom/BlockLib/blocks/voxel_library.tres")
 var _blocks = []
 var _raw_mappings = []

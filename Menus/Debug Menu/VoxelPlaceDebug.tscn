@@ -1,0 +1,172 @@
+[gd_scene load_steps=2 format=3 uid="uid://uk7buvjbe8j"]
+
+[ext_resource type="Script" uid="uid://bhx0422odm0a7" path="res://Menus/Debug Menu/voxel_place_debug.gd" id="1_kjrhv"]
+
+[node name="VoxelPlaceDebug" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 400.0
+offset_right = 400.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_kjrhv")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 0
+offset_right = 431.0
+offset_bottom = 650.0
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Voxel Placement"
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ColorRect" type="ColorRect" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Material" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Material Select"
+
+[node name="MaterialSelect" type="OptionButton" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator4" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Shape" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Shape Select"
+
+[node name="ShapeSelect" type="OptionButton" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator7" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="GridSize" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Grid Size Slider"
+
+[node name="GridSizeSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator5" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="OverrideVoxel" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Override Voxels"
+
+[node name="OverrideVoxels" type="CheckButton" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator6" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="PlacementSizeSliders" type="VBoxContainer" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="X" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+text = "X Slider"
+
+[node name="XSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="XYSeperator" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+
+[node name="Y" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+text = "Y Slider"
+
+[node name="YSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="YZSeperator" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+
+[node name="Z" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+text = "Z Slider"
+
+[node name="ZSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="ZRSeperator" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+
+[node name="Radius" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+text = "Radius Slider"
+
+[node name="RSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="RHSeperator" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+
+[node name="Height" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+text = "Height Slider"
+
+[node name="HSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="HLSeperator" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+
+[node name="Length" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+text = "Length Slider"
+
+[node name="LSlider" type="HSlider" parent="CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="ColorPickControl" type="VBoxContainer" parent="CenterContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="HideButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/ColorPickControl"]
+layout_mode = 2
+text = "Close Color Picker"
+
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/PanelContainer/HBoxContainer/ColorPickControl"]
+layout_mode = 2
+
+[node name="ColorPicker" type="ColorPicker" parent="CenterContainer/PanelContainer/HBoxContainer/ColorPickControl"]
+layout_mode = 2
+
+[connection signal="pressed" from="CenterContainer/PanelContainer/HBoxContainer/ColorPickControl/HideButton" to="." method="_on_hide_button_pressed"]
+[connection signal="color_changed" from="CenterContainer/PanelContainer/HBoxContainer/ColorPickControl/ColorPicker" to="." method="_on_color_picker_color_changed"]

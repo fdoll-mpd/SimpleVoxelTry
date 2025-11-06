@@ -5,6 +5,7 @@ const Util = preload("res://CopyFrom/common/util.gd")
 @export var mouse_sensitivity: float = 0.01
 @onready var head: Node3D = $Head
 @onready var eye_camera: Camera3D = $Head/EyeCamera
+@onready var block_place_debug: Control = $VoxelPlaceDebug
 #@onready var viewer: VoxelViewer = $VoxelViewer
 @export var voxel_terrain_path: NodePath 
 @export var place_block_id: int = 1
@@ -105,6 +106,7 @@ class Crosshair:
 		
 		
 func _ready() -> void:
+	block_place_debug.hide()
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_create_debug_hud()
 	
@@ -174,6 +176,8 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	# Look
 	if event is InputEventMouseMotion:
+		if block_place_debug.is_visible():
+			return
 		var relative = event.relative * mouse_sensitivity
 		head.rotate_y(-relative.x)
 		eye_camera.rotate_x(-relative.y)
@@ -181,6 +185,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Place single block
 	if event is InputEventMouseButton and event.pressed and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
+		if block_place_debug.is_visible():
+			return
 		if world_builder != null and world_builder.has_method("place_one_block_from_ray"):
 			var origin: Vector3 = eye_camera.global_transform.origin
 			var dir: Vector3 = -eye_camera.global_transform.basis.z
@@ -220,6 +226,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _hotbar_keys.has(event.keycode):
 			var slot_index = _hotbar_keys[event.keycode]
 			_hotbar.select_slot(slot_index)
+			return
+		
+		if event.keycode == KEY_Y:
+			if block_place_debug.is_visible():
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+				block_place_debug.hide()
+			else:
+				block_place_debug.show()
+				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			return
 				
 		var structure_type = ""
