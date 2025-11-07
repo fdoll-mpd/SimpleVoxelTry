@@ -6,6 +6,7 @@ const Util = preload("res://CopyFrom/common/util.gd")
 @onready var head: Node3D = $Head
 @onready var eye_camera: Camera3D = $Head/EyeCamera
 @onready var block_place_debug: Control = $VoxelPlaceDebug
+@onready var VoxelPlace: Node = $VoxelPlaceDebug
 #@onready var viewer: VoxelViewer = $VoxelViewer
 @export var voxel_terrain_path: NodePath 
 @export var place_block_id: int = 1
@@ -56,6 +57,19 @@ const _hotbar_keys = {
 	KEY_7: 6,
 	KEY_8: 7,
 	KEY_9: 8
+}
+
+var current_place_cfg: Dictionary = {
+	"shape": 0,
+	"material_idx": 0,
+	"grid": 1,
+	"size_x": 1,
+	"size_y": 1,
+	"size_z": 1,
+	"radius": 1,
+	"height": 1,
+	"length": 1,
+	"override": true,
 }
 
 class Crosshair:
@@ -131,6 +145,16 @@ func _ready() -> void:
 	
 	_terrain.add_child(_cursor)
 	_vt.channel = VoxelBuffer.CHANNEL_TYPE
+	
+	if VoxelPlace.has_method("set_config"):
+		VoxelPlace.set_config(current_place_cfg)
+
+	if VoxelPlace.has_signal("config_changed"):
+		VoxelPlace.config_changed.connect(_on_ui_config_changed)
+
+func _on_ui_config_changed(cfg: Dictionary) -> void:
+	current_place_cfg = cfg
+
 
 func _physics_process(delta: float) -> void:
 
@@ -182,6 +206,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		head.rotate_y(-relative.x)
 		eye_camera.rotate_x(-relative.y)
 		eye_camera.rotation.x = clamp(eye_camera.rotation.x, deg_to_rad(-80), deg_to_rad(80))
+		
+	#if event is InputEventMouseButton  and event.button_index == MOUSE_BUTTON_MIDDLE and event.pressed:
+		#_pop_voxel_as_rigidbody(event.position)
 
 	# Place single block
 	if event is InputEventMouseButton and event.pressed and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
@@ -204,7 +231,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.button_index == MOUSE_BUTTON_LEFT:
 				ok= world_builder.place_one_block_from_ray(origin, dir, click_block_id, click_max_distance, true)
 			else:
-				ok = world_builder.place_one_block_from_ray(origin, dir, click_block_id, click_max_distance, false)
+				#ok = world_builder.place_one_block_from_ray(origin, dir, click_block_id, click_max_distance, false)
+				ok = world_builder.voxel_debug_place_structure_from_ray(origin, dir, click_block_id, current_place_cfg)
 			if ok:
 				# Get the actual hit point for feedback
 				var hit = _vt.raycast(origin, dir.normalized(), click_max_distance)
@@ -236,6 +264,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				block_place_debug.show()
 				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			return
+			
+		if event.keycode == KEY_P:
+			var origin: Vector3 = eye_camera.global_transform.origin
+			var dir: Vector3 = -eye_camera.global_transform.basis.z
+			var horizontal_dir = Vector2(dir.x, dir.z).normalized()
+			#origin, dir
+			#_pop_voxel_as_rigidbody(event.position)
+			world_builder._pop_voxel_as_rigidbody(origin, dir)
 				
 		var structure_type = ""
 		var structure_name = ""
@@ -400,3 +436,6 @@ func _update_debug_hud(_delta: float) -> void:
 
 func _on_inventory_changed() -> void:
 	pass # Replace with function body.
+	
+	
+	

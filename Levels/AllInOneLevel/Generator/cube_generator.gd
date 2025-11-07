@@ -81,3 +81,4 @@ func _paint_copper_blob(buf: VoxelBuffer, center: Vector3i, radius: int, rng: Ra
 					var p := center + Vector3i(dx, dy, dz)
 					if p.x >= 0 and p.x < size_v.x and p.y >= 0 and p.y < size_v.y and p.z >= 0 and p.z < size_v.z:
 						buf.set_voxel(COPPER[rng.randi_range(0, 2)], p.x, p.y, p.z, channel)
+						

@@ -3,6 +3,8 @@ extends Control
 @onready var _color_control = $CenterContainer/PanelContainer/HBoxContainer/ColorPickControl
 @onready var _color_rect = $CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/ColorRect
 
+signal config_changed(config: Dictionary)
+
 enum Shape { BOX, SPHERE, CYLINDER, CAPSULE, LINE, POINT }
 var _voxel_library: VoxelBlockyLibrary = preload("res://CopyFrom/BlockLib/blocks/voxel_library.tres")
 func get_material_names():
@@ -39,6 +41,8 @@ func get_material_names():
 @onready var zr_seperator: HSeparator = $CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders/ZRSeperator
 @onready var rh_seperator: HSeparator = $CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders/RHSeperator
 @onready var hl_seperator: HSeparator = $CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders/HLSeperator
+
+@onready var override_voxels: CheckButton  = $CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/OverrideVoxels
 
 # Sliders/SpinBoxes for placement & size
 #@onready var s_size_x: Range = %CenterContainer/PanelContainer/HBoxContainer/VBoxContainer/PlacementSizeSliders/XSlider
@@ -79,14 +83,15 @@ var _sliders := {}
 var _labels := {}
 var _seperators := {}
 
-signal config_changed(config: Dictionary)
+
 func _emit_config():
-	emit_signal("config_changed", {"shape": shape_select.get_selected_id(), 
-	"material": materials[material_select.get_selected_id()], 
-	"size_x": x_slider.value, 
-	"size_y": y_slider.value,
-	"size_z": z_slider.value,
-	"radius": r_slider.value, "height": h_slider.value, "length": l_slider.value})
+	emit_signal("config_changed", get_config())
+	#emit_signal("config_changed", {"shape": shape_select.get_selected_id(), 
+	#"material": materials[material_select.get_selected_id()], 
+	#"size_x": x_slider.value, 
+	#"size_y": y_slider.value,
+	#"size_z": z_slider.value,
+	#"radius": r_slider.value, "height": h_slider.value, "length": l_slider.value})
 
 func dump_node_tree(root: Node, n: Node = null, depth: int = 0) -> void:
 	if n == null:
@@ -120,7 +125,12 @@ func _ready() -> void:
 	# React to user changes
 	shape_select.item_selected.connect(_on_shape_selected)
 	material_select.item_selected.connect(_on_material_selected)
-
+	for r in _sliders.values():
+		r.value_changed.connect(func(_v): _emit_config())
+	shape_select.item_selected.connect(func(_i): _apply_shape(shape_select.get_selected_id()); _emit_config())
+	material_select.item_selected.connect(func(_i): _emit_config())
+	grid_size.value_changed.connect(func(_v): _emit_config())
+	override_voxels.toggled.connect(func(_b): _emit_config())
 	# Initialize state
 	_apply_shape(shape_select.get_selected_id())
 	
@@ -142,6 +152,8 @@ func _ready() -> void:
 	# (Optional) set a starter color so you can see it instantly
 	if _color_rect.color.a == 0.0 or _color_rect.color == Color(0,0,0,0):
 		_color_rect.color = Color(0.9, 0.2, 0.2, 1.0)
+	
+	_emit_config()
 
 func _populate_shape_select() -> void:
 	shape_select.clear()
@@ -201,3 +213,43 @@ func _on_color_rect_gui_input(e: InputEvent) -> void:
 	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 		_color_control.show()
 		color_picker.grab_focus()
+
+
+func get_config() -> Dictionary:
+	# Always return the full config object
+	var mat_idx := material_select.get_selected_id()
+	var cfg := {
+		"shape":        shape_select.get_selected_id(),    # use enum Shape
+		"material_idx": mat_idx,
+		"material":     materials[mat_idx],
+		#"block_id":     material_block_ids[min(mat_idx, material_block_ids.size() - 1)],
+		"grid":         int(grid_size.value),
+		"size_x":       int(x_slider.value),
+		"size_y":       int(y_slider.value),
+		"size_z":       int(z_slider.value),
+		"radius":       int(r_slider.value),
+		"height":       int(h_slider.value),
+		"length":       int(l_slider.value),
+		"override":     override_voxels.button_pressed,
+	}
+	if is_instance_valid(color_picker):
+		cfg["color"] = color_picker.color
+	return cfg
+
+func set_config(cfg: Dictionary) -> void:
+	# Apply external config (from TestCharacter) into the UI without reordering signals
+	if cfg.has("shape"):        shape_select.select(int(cfg.shape))
+	if cfg.has("material_idx"): material_select.select(int(cfg.material_idx))
+	if cfg.has("grid"):         grid_size.value = cfg.grid
+	if cfg.has("size_x"):       x_slider.value = cfg.size_x
+	if cfg.has("size_y"):       y_slider.value = cfg.size_y
+	if cfg.has("size_z"):       z_slider.value = cfg.size_z
+	if cfg.has("radius"):       r_slider.value = cfg.radius
+	if cfg.has("height"):       h_slider.value = cfg.height
+	if cfg.has("length"):       l_slider.value = cfg.length
+	if cfg.has("override"):     override_voxels.button_pressed = cfg.override
+	if cfg.has("color") and is_instance_valid(color_picker):
+		color_picker.color = cfg.color
+
+	_apply_shape(shape_select.get_selected_id())
+	_emit_config()

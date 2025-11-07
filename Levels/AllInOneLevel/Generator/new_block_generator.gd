@@ -41,11 +41,16 @@ const TYPE_CH := VoxelBuffer.CHANNEL_TYPE
 @export var window_size := Vector3i(3, 2, 1) 
 @export var door_size := Vector3i(2, 3, 1) 
 
+@export var enable_table := true
+@export var table_size := Vector3i(25, 50, 25)
+@export var table_pos := Vector3i(100, SURFACE_Y + 1, 0)
+
 var _rng := RandomNumberGenerator.new()
 var _S_wall: Structure
 var _S_copper_cube: Structure
 var _S_planks_cube: Structure
 var _S_house: Structure
+var _S_table: Structure
 
 func _init() -> void:
 	_rng.seed = int(Time.get_unix_time_from_system())
@@ -58,6 +63,8 @@ func _init() -> void:
 		_S_planks_cube = _gen_solid_cube(planks_cube_size, Planks)
 	if enable_house:
 		_S_house = _gen_house(house_size)
+	if enable_table:
+		_S_table = _gen_tall_table(table_size)
 
 func _generate_block(buffer: VoxelBuffer, origin_in_voxels: Vector3i, lod: int) -> void:
 	_fill_ground(buffer, origin_in_voxels)
@@ -76,7 +83,9 @@ func _generate_block(buffer: VoxelBuffer, origin_in_voxels: Vector3i, lod: int) 
 
 	if _S_house:
 		_stamp_structure_if_intersect(tool, block_aabb, _S_house, house_pos)
-
+	
+	if _S_table:
+		_stamp_structure_if_intersect(tool, block_aabb, _S_table, table_pos)
 
 func _fill_ground(buffer: VoxelBuffer, origin: Vector3i) -> void:
 	var size := Vector3i(buffer.get_size())
@@ -296,6 +305,37 @@ func _make_door(buf: VoxelBuffer, side: String, W: int, H: int, D: int, dsize: V
 					
 func _pick(ids: Array) -> int:
 	return ids[int(randi()) % ids.size()]
+
+func _gen_tall_table(sz: Vector3i) -> Structure:
+	# Require some minimal sizes to fit features
+	var W = max(sz.x, 24)
+	var H = max(sz.y, 50)
+	var D = max(sz.z, 24)
+
+	var S := Structure.new()
+	S.offset = Vector3i(0, 0, 0)
+	var buf := S.voxels
+	buf.create(W, H, D)
+
+	var plank_ids := [Planks.light, Planks.normal, Planks.dark]
+	var P := 4
+	var corners := [
+		Rect2i(0, 0, P, P),   
+		Rect2i(W - P, 0, P, P),  
+		Rect2i(0, D - P, P, P),  
+		Rect2i(W - P, D - P, P, P)  
+	]
+	for y in H:
+		for r in corners:
+			for z in r.size.y:
+				for x in r.size.x:
+					buf.set_voxel(_pick(plank_ids), r.position.x + x, y, r.position.y + z, TYPE_CH)
+	
+	for z in D:
+		for x in W:
+			buf.set_voxel(_pick(plank_ids), x, H-P, z, TYPE_CH)
+
+	return S
 
 func _paint_blob(buf: VoxelBuffer, center: Vector3i, radius: int, ids: Array, rng: RandomNumberGenerator, inner_min: Vector3i, inner_max: Vector3i) -> void:
 	var r2 := radius * radius

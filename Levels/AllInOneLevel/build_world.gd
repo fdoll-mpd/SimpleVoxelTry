@@ -825,3 +825,259 @@ func print_world_limits_summary(start_world: Vector3 = Vector3.ZERO, max_steps: 
 ## Convenience: erase the current border box, if any
 #func erase_world_border_box() -> void:
 	#_clear_world_border_viz()
+
+
+enum Shape { BOX, SPHERE, CYLINDER, CAPSULE, LINE, POINT }
+
+func voxel_debug_place_structure_from_ray(origin: Vector3, dir: Vector3, max_distance: float, cfg: Dictionary) -> bool:
+	print("Debug cfg", cfg)
+	var vt := _get_tool()
+	if vt == null:
+		print("Failed debug add because Could not get voxel tool")
+		return false
+
+	if max_distance <= 0.0:
+		var _vox_size := voxel_size_world()
+		max_distance = (float(max_place_distance_voxels) * _vox_size if use_voxel_relative_distances else max_place_distance)
+	
+	vt.set_raycast_normal_enabled(true)
+	var player_dir := dir.normalized()
+	var hit := vt.raycast(origin, player_dir, max_distance)
+	
+	if hit == null:
+		print("Failed debug add because could not find a hit from the raycast")
+		return false
+	var hit_pos: Vector3i = hit.position
+	var n := hit.normal   
+	var step := Vector3i(_axis_step(n.x), _axis_step(n.y), _axis_step(n.z))
+	
+	var place_pos: Vector3i = hit_pos + step
+	# (optional) bounds/editability check around the place position
+	if not vt.is_area_editable(AABB(Vector3(place_pos), Vector3.ONE)):
+		print("Failed debug add because area we are trying to place in is not editable")
+		return false
+	
+	vt.mode = VoxelTool.MODE_SET
+	vt.channel = VoxelBuffer.CHANNEL_TYPE
+	#if placing:
+		#vt.value = block_id
+		#vt.do_point(place_pos)
+		
+	#var hit := _raycast_voxel_surface(origin, dir, max_distance)
+	#if hit == null:
+		#return false
+
+	var block_id: int = int(cfg.get("material_idx", 1))
+	var override_voxels: bool = bool(cfg.get("override", true))
+	var grid: int = int(cfg.get("grid", 1))
+
+	# Snap to grid if needed
+	var pos: Vector3i = _to_grid(hit.position, grid)
+	
+	vt.value = block_id
+	print("Starting the match for placing block ID", block_id)
+	match int(cfg.get("shape", Shape.BOX)):
+		Shape.BOX:
+			return _place_box(pos, Vector3i(int(cfg.size_x), int(cfg.size_y), int(cfg.size_z)), block_id, override_voxels, vt)
+		Shape.SPHERE:
+			return _place_sphere(pos, int(cfg.radius), block_id, override_voxels, vt)
+		Shape.CYLINDER:
+			return _place_cylinder(pos, int(cfg.radius), int(cfg.height), block_id, override_voxels, vt)
+		Shape.CAPSULE:
+			return _place_capsule(pos, int(cfg.radius), int(cfg.height), block_id, override_voxels, vt)
+		Shape.LINE:
+			return _place_line(pos, int(cfg.length), block_id, override_voxels, dir, vt)
+		Shape.POINT:
+			return _place_point(pos, block_id, override_voxels, vt)
+		_:
+			return _place_point(pos, block_id, override_voxels, vt)
+
+# --- helpers (replace with your engine/world access) ---
+func _raycast_voxel_surface(origin: Vector3, dir: Vector3, max_dist: float) -> Dictionary:
+	# Return {'position': Vector3, 'normal': Vector3} or null
+	# Use your physics raycast or your voxel engine’s ray function
+	var space := get_world_3d().direct_space_state
+	var q := PhysicsRayQueryParameters3D.create(origin, origin + dir * max_dist)
+	var res := space.intersect_ray(q)
+	if res.is_empty(): return {}
+	return {"position": res.position, "normal": res.normal}
+
+func _to_grid(p: Vector3, g: int) -> Vector3i:
+	if g <= 1: return Vector3i(round(p.x), round(p.y), round(p.z))
+	return Vector3i(round(p.x / g) * g, round(p.y / g) * g, round(p.z / g) * g)
+
+# --- structure placers (implement with your voxel world API) ---
+func _place_point(pos: Vector3i, block_id: int, override_voxels: bool, vt: VoxelTool) -> bool:
+	#return _set_block(pos, block_id, override_voxels)
+	vt.do_point(pos)
+	return true
+
+func _place_box(pos: Vector3i, size: Vector3i, block_id: int, override_voxels: bool, vt: VoxelTool) -> bool:
+	var ok := true
+	for x in range(pos.x, pos.x + size.x):
+		for y in range(pos.y, pos.y + size.y):
+			for z in range(pos.z, pos.z + size.z):
+				#ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
+				var p = Vector3i(x,y,z)
+				var cur := vt.get_voxel(p)
+				if !override_voxels:
+					if cur == 0:
+						vt.set_voxel(p, block_id)
+						continue
+				else:
+					vt.do_point(p)
+	return ok
+
+func _place_sphere(center: Vector3i, r: int, block_id: int, override_voxels: bool, vt: VoxelTool) -> bool:
+	var ok := true
+	var r2 := r * r
+	for x in range(center.x - r, center.x + r + 1):
+		for y in range(center.y - r, center.y + r + 1):
+			for z in range(center.z - r, center.z + r + 1):
+				var d := Vector3i(x - center.x, y - center.y, z - center.z)
+				if d.x*d.x + d.y*d.y + d.z*d.z <= r2:
+					#ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
+					var p = Vector3i(x,y,z)
+					var cur := vt.get_voxel(p)
+					if !override_voxels:
+						if cur == 0:
+							vt.set_voxel(p, block_id)
+							continue
+					else:
+						vt.do_point(p)
+	return ok
+
+func _place_cylinder(center: Vector3i, r: int, h: int, block_id: int, override_voxels: bool, vt: VoxelTool) -> bool:
+	var ok := true
+	var r2 := r * r
+	var y0 := center.y
+	for y in range(y0, y0 + h):
+		for x in range(center.x - r, center.x + r + 1):
+			for z in range(center.z - r, center.z + r + 1):
+				var dx := x - center.x
+				var dz := z - center.z
+				if dx*dx + dz*dz <= r2:
+					#ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
+					var p = Vector3i(x,y,z)
+					var cur := vt.get_voxel(p)
+					if !override_voxels:
+						if cur == 0:
+							vt.set_voxel(p, block_id)
+							continue
+					else:
+						vt.do_point(p)
+	return ok
+
+#func _place_capsule(center: Vector3i, r: int, h: int, block_id: int, override_voxels: bool, vt: VoxelTool) -> bool:
+	## cylinder + two hemispheres (simple discrete approach)
+	#
+	#var ok: bool = _place_sphere(center + Vector3i(0,  h/2, 0), r, block_id, override_voxels, vt)
+	#ok = _place_sphere(center + Vector3i(0, -h/2, 0), r, block_id, override_voxels, vt) and ok
+	#ok = _place_cylinder(center, r, max(0, h - 2*r), block_id, override_voxels, vt) and ok
+	#return ok
+	
+func _place_capsule(bottom: Vector3i, r: int, h: int, block_id: int, override_voxels: bool, vt: VoxelTool) -> bool:
+	# cylinder + two hemispheres (simple discrete approach)
+	if r > h:
+		var temp = h
+		h = r
+		r = temp
+	
+	var ok: bool = _place_sphere(bottom + Vector3i(0,  r, 0), r, block_id, override_voxels, vt)
+	ok = _place_sphere(bottom + Vector3i(0, h - r, 0), r, block_id, override_voxels, vt) and ok
+	ok = _place_cylinder(bottom + Vector3i(0,  r, 0), r, max(0, h - 2*r), block_id, override_voxels, vt) and ok
+	return ok
+
+func _place_line(start: Vector3i, length: int, block_id: int, override_voxels: bool, dir: Vector3, vt: VoxelTool) -> bool:
+	# Lay blocks along aim direction
+	var ok := true
+	var step := dir.normalized()
+	var p := Vector3(start)
+	for i in length:
+		#ok = _set_block(Vector3i(round(p.x), round(p.y), round(p.z)), block_id, override_voxels) and ok
+		var q = Vector3i(round(p.x), round(p.y), round(p.z))
+		var cur := vt.get_voxel(p)
+		if !override_voxels:
+			if cur == 0:
+				vt.set_voxel(q, block_id)
+				continue
+		else:
+			vt.do_point(q)
+		p += step
+	return ok
+
+# Replace this with your voxel world’s API
+func _set_block(pos: Vector3i, block_id: int, override_voxels: bool) -> bool:
+	# e.g., world.set_voxel(pos, block_id, override_voxels)
+	return true
+
+
+
+func _pop_voxel_as_rigidbody(origin: Vector3, dir: Vector3) -> void:
+	if terrain == null:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+
+	var tool := _get_tool()
+	tool.channel = VoxelBuffer.CHANNEL_TYPE
+	var hit := tool.raycast(origin, dir, 64)
+	if hit == null:
+		return
+
+	var vpos: Vector3i = hit.position          # voxel coords that were hit
+	# 2) Read ID, bail if air
+	var id := tool.get_voxel(vpos)
+	if id == 0:
+		return
+
+	# 3) Remove voxel from terrain (turn to air)
+	tool.mode = VoxelTool.MODE_SET             # blocky edit
+	tool.set_voxel(vpos, 0)
+
+	# 4) Spawn rigid body representing that voxel
+	var rb := RigidBody3D.new()
+	rb.freeze = false
+	rb.mass = 1.0
+	rb.linear_damp = 0.05
+	rb.angular_damp = 0.05
+
+	# Try to grab the voxel's actual mesh from the blocky library
+	var mesh: Mesh = null
+	var lib: VoxelBlockyLibrary = null
+	if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
+		lib = terrain.mesher.library  # VoxelBlockyLibraryBase
+	if lib and lib.has_method("get_model"):
+		var model := lib.get_model(id) # VoxelBlockyModel (Cube/Mesh/etc.)
+		if model and model.has_method("get"):
+			# If it's a mesh-based model, it has a "mesh" property (VoxelBlockyModelMesh)
+			mesh = model.get("mesh")
+	if mesh == null:
+		mesh = BoxMesh.new()           # fallback: simple cube
+
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	rb.add_child(mi)
+
+	# Collision: best-effort
+	var shape: Shape3D = null
+	if mesh is ArrayMesh or mesh is Mesh:
+		# Trimesh for arbitrary mesh; if you prefer boxes, use BoxShape3D
+		shape = mesh.create_trimesh_shape()
+	if shape == null:
+		var bs := BoxShape3D.new()
+		bs.size = Vector3.ONE          # unit voxel
+		shape = bs
+	var cs := CollisionShape3D.new()
+	cs.shape = shape
+	rb.add_child(cs)
+
+	# Place at voxel center (assuming 1x1x1 voxels; offset as needed if you scale)
+	rb.global_transform.origin = Vector3(vpos) + Vector3(0.5, 0.5, 0.5)
+
+	# Optional: give it a little impulse so it "pops" out
+	rb.apply_impulse(-dir * 2.0, Vector3.ZERO)
+
+	# Add to scene
+	get_tree().current_scene.add_child(rb)
