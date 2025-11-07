@@ -116,6 +116,7 @@ func make_voxel_plane(corner: Vector3 = Vector3(-20, 3, -20), side: int=50, voxe
 # EXAMPLES
 # =========================
 func _ready() -> void:
+	print("Build World scale", terrain.global_transform.basis.get_scale().abs())
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	make_voxel_plane(Vector3(-20, 3, -20), 50, 2)
 
@@ -1012,6 +1013,126 @@ func _set_block(pos: Vector3i, block_id: int, override_voxels: bool) -> bool:
 	return true
 
 
+func _pop_sphere(center: Vector3i, dir: Vector3, block_id: int) -> bool:
+	var tool := _get_tool()
+	tool.channel = VoxelBuffer.CHANNEL_TYPE
+	var hit := tool.raycast(center, dir, 64)
+	if hit == null:
+		return false
+	var ok := true
+	var r: int = 2
+	var r2 := r * r
+	for x in range(center.x - r, center.x + r + 1):
+		for y in range(center.y - r, center.y + r + 1):
+			for z in range(center.z - r, center.z + r + 1):
+				var d := Vector3i(x - center.x, y - center.y, z - center.z)
+				if d.x*d.x + d.y*d.y + d.z*d.z <= r2:
+					#ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
+					var p = Vector3i(x,y,z)
+					var cur := tool.get_voxel(p)
+					if cur > 0:
+						#tool.set_voxel(p, block_id)
+						_pop_voxel_as_rigidbody
+						continue
+	return ok
+func _pop_voxel_sphere_as_rigidbody(origin: Vector3, dir: Vector3, r: int) -> void:
+	if terrain == null:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+
+	var tool := _get_tool()
+	tool.channel = VoxelBuffer.CHANNEL_TYPE
+	var hit := tool.raycast(origin, dir, 64)
+	if hit == null:
+		return
+
+	var vpos: Vector3i = hit.position 
+	var id := tool.get_voxel(vpos)
+	if id == 0:
+		return
+	
+	for x in range(vpos.x - r, vpos.x + r + 1):
+		for y in range(vpos.y - r, vpos.y + r + 1):
+			for z in range(vpos.z - r, vpos.z + r + 1):
+				var d := Vector3i(x - vpos.x, y - vpos.y, z - vpos.z)
+				if d.x*d.x + d.y*d.y + d.z*d.z <= r * r:
+					#ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
+					var p = Vector3i(x,y,z)
+					var cur := tool.get_voxel(p)
+					if cur > 0:
+						tool.mode = VoxelTool.MODE_SET
+						tool.set_voxel(p, 0)
+
+						var rb := RigidBody3D.new()
+						rb.freeze = false
+						rb.mass = 1.0
+						rb.linear_damp = 0.05
+						rb.angular_damp = 0.05
+						#rb.gravity_scale = 0.0
+
+						var voxel_scale := terrain.global_transform.basis.get_scale().abs()
+						var scale_factor := voxel_scale.x
+						
+						var mesh: Mesh = null
+						var material: Material = null
+						var lib: VoxelBlockyLibrary = null
+						
+						if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
+							lib = terrain.mesher.library
+						print("Library?", lib)
+						if lib and lib.has_method("get_model"):
+							var model := lib.get_model(id) 
+							print("Got model", model)
+							if model and model.has_method("get"):
+								mesh = model.get("mesh")
+								print("Got mesh", mesh)
+								if mesh is ArrayMesh:
+									var aabb = mesh.get_aabb()
+									print("Mesh AABB: ", aabb)
+								
+							if "material_override_0" in model and model.material_override_0 != null:
+									material = model.material_override_0
+									print("Got material", material)
+
+						mesh = null
+						if mesh == null:
+							print("Fallback mesh")
+							var box_mesh := BoxMesh.new()
+							box_mesh.size = voxel_scale
+							mesh = box_mesh
+						
+						var mi := MeshInstance3D.new()
+						mi.mesh = mesh
+						if material != null:
+							print("Valid Material")
+							mi.material_override = material
+						rb.add_child(mi)
+
+						var shape: Shape3D = null
+						if mesh is ArrayMesh or mesh is Mesh:
+							shape = mesh.create_convex_shape()
+						if shape == null:
+							print("No ArrayMesh")
+							var bs := BoxShape3D.new()
+							bs.size = voxel_scale
+							shape = bs
+						var cs := CollisionShape3D.new()
+						cs.shape = shape
+						rb.add_child(cs)
+
+						var voxel_center_local := Vector3(p) + Vector3(0.5, 0.5, 0.5)
+						var world_pos := terrain.to_global(voxel_center_local)
+						
+						rb.scale = voxel_scale
+						
+						get_tree().current_scene.add_child(rb)
+						rb.global_transform.origin = world_pos
+						#var impulse_strength := 2.0 * scale_factor  # Scale impulse with voxel size
+						var impulse_strength := 2.0 
+						rb.apply_impulse(-dir.normalized() * impulse_strength, Vector3.ZERO)
+
 
 func _pop_voxel_as_rigidbody(origin: Vector3, dir: Vector3) -> void:
 	if terrain == null:
@@ -1026,15 +1147,15 @@ func _pop_voxel_as_rigidbody(origin: Vector3, dir: Vector3) -> void:
 	if hit == null:
 		return
 
-	var vpos: Vector3i = hit.position          # voxel coords that were hit
-	# 2) Read ID, bail if air
+	var vpos: Vector3i = hit.position 
 	var id := tool.get_voxel(vpos)
 	if id == 0:
 		return
-
-	# 3) Remove voxel from terrain (turn to air)
-	tool.mode = VoxelTool.MODE_SET             # blocky edit
+		
+	tool.mode = VoxelTool.MODE_SET
 	tool.set_voxel(vpos, 0)
+	print("got hit at", hit)
+	print("got vpos", vpos)
 
 	# 4) Spawn rigid body representing that voxel
 	var rb := RigidBody3D.new()
@@ -1042,42 +1163,97 @@ func _pop_voxel_as_rigidbody(origin: Vector3, dir: Vector3) -> void:
 	rb.mass = 1.0
 	rb.linear_damp = 0.05
 	rb.angular_damp = 0.05
+	#rb.gravity_scale = 0.0
 
-	# Try to grab the voxel's actual mesh from the blocky library
+	var voxel_scale := terrain.global_transform.basis.get_scale().abs()
+	var scale_factor := voxel_scale.x
+	
 	var mesh: Mesh = null
+	var material: Material = null
 	var lib: VoxelBlockyLibrary = null
+	
 	if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
-		lib = terrain.mesher.library  # VoxelBlockyLibraryBase
+		lib = terrain.mesher.library
+	print("Library?", lib)
 	if lib and lib.has_method("get_model"):
 		var model := lib.get_model(id) # VoxelBlockyModel (Cube/Mesh/etc.)
+		print("Got model", model)
 		if model and model.has_method("get"):
-			# If it's a mesh-based model, it has a "mesh" property (VoxelBlockyModelMesh)
 			mesh = model.get("mesh")
-	if mesh == null:
-		mesh = BoxMesh.new()           # fallback: simple cube
+			print("Got mesh", mesh)
+			if mesh is ArrayMesh:
+				var aabb = mesh.get_aabb()
+				print("Mesh AABB: ", aabb)
+			
+		if "material_override_0" in model and model.material_override_0 != null:
+				material = model.material_override_0
+				print("Got material", material)
 
+	mesh = null
+	if mesh == null:
+		print("Fallback mesh")
+		var box_mesh := BoxMesh.new()
+		#box_mesh.size = Vector3.ONE  # Unit size, will be scaled by transform
+		box_mesh.size = voxel_scale
+		mesh = box_mesh
+	
+	# Create mesh instance
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
+	if material != null:
+		print("Valid Material")
+		mi.material_override = material
 	rb.add_child(mi)
 
 	# Collision: best-effort
 	var shape: Shape3D = null
 	if mesh is ArrayMesh or mesh is Mesh:
 		# Trimesh for arbitrary mesh; if you prefer boxes, use BoxShape3D
-		shape = mesh.create_trimesh_shape()
+		#shape = mesh.create_trimesh_shape()
+		shape = mesh.create_convex_shape()
 	if shape == null:
+		print("No ArrayMesh")
 		var bs := BoxShape3D.new()
-		bs.size = Vector3.ONE          # unit voxel
+		#bs.size = Vector3.ONE          # unit voxel
+		bs.size = voxel_scale
 		shape = bs
 	var cs := CollisionShape3D.new()
 	cs.shape = shape
 	rb.add_child(cs)
 
 	# Place at voxel center (assuming 1x1x1 voxels; offset as needed if you scale)
-	rb.global_transform.origin = Vector3(vpos) + Vector3(0.5, 0.5, 0.5)
+	#rb.global_transform.origin = Vector3(vpos) + Vector3(0.5, 0.5, 0.5)
+	#rb.global_transform.origin = Vector3(vpos) + terrain.global_transform.basis.get_scale().abs()
+	#rb.scale = terrain.global_transform.basis.get_scale().abs()
+	#var voxel_center_local := Vector3(vpos) + Vector3(0.5, 0.5, 0.5)
+	var voxel_center_local := Vector3(vpos) + Vector3(0.5, 0.5, 0.5)
+	print("spawning rigid body at ", voxel_center_local)
+	var world_pos := terrain.to_global(voxel_center_local)
+	
+	print("Voxel local position: ", vpos)
+	print("Voxel center (local): ", voxel_center_local)
+	print("World position: ", world_pos)
+	print("Applying scale: ", voxel_scale)
+	
+	rb.scale = voxel_scale
+	
+	print("RigidBody scale set to: ", rb.scale)
+	
+	# Add to tree
+	print("Current scene ", get_tree().current_scene)
+	#print("Current scene scale", get_tree().current_scene.)
+	get_tree().current_scene.add_child(rb)
+	
+	# Set position (AFTER adding to tree)
+	rb.global_transform.origin = world_pos
+	print("RigidBody spawned at world position: ", rb.global_position)
+	print("RigidBody final scale: ", rb.scale)
+	
 
 	# Optional: give it a little impulse so it "pops" out
-	rb.apply_impulse(-dir * 2.0, Vector3.ZERO)
+	#rb.apply_impulse(-dir * 2.0, Vector3.ZERO)
+	var impulse_strength := 2.0 * scale_factor  # Scale impulse with voxel size
+	rb.apply_impulse(-dir.normalized() * impulse_strength, Vector3.ZERO)
 
 	# Add to scene
-	get_tree().current_scene.add_child(rb)
+	#get_tree().current_scene.add_child(rb)

@@ -271,7 +271,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			var horizontal_dir = Vector2(dir.x, dir.z).normalized()
 			#origin, dir
 			#_pop_voxel_as_rigidbody(event.position)
-			world_builder._pop_voxel_as_rigidbody(origin, dir)
+			#world_builder._pop_voxel_as_rigidbody(origin, dir)
+			world_builder._pop_voxel_sphere_as_rigidbody(origin, dir, 2)
 				
 		var structure_type = ""
 		var structure_name = ""
