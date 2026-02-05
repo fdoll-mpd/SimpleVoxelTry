@@ -4,6 +4,11 @@ extends Node3D
 @export var max_place_distance: float = 64.0
 @onready var terrain: VoxelTerrain = $VoxelTerrain
 @onready var _characters_container : Node = $Players
+@onready var test_character : Node = $TestCharacter
+
+const LooseVoxelScene = preload("./Loose Voxel/LooseVoxel.tscn")
+
+var _loose_voxels: Array[Node3D] = []
 
 @export var use_voxel_relative_distances: bool = true
 @export var max_place_distance_voxels: int = 64
@@ -94,7 +99,7 @@ func place_sdf_sphere(center: Vector3, radius: float, add: bool = true) -> void:
 		vt.mode = VoxelTool.MODE_REMOVE
 	vt.do_sphere(center, radius)
 
-func make_voxel_plane(corner: Vector3 = Vector3(-20, 3, -20), side: int=50, voxel_id: int = 2):
+func make_voxel_plane(corner: Vector3 = Vector3(-20, 0, -20), side: int=50, voxel_id: int = 2):
 	var vt: VoxelTool = _get_tool()
 	var corner_v := world_to_voxel(corner)
 	for x_side in side:
@@ -118,7 +123,7 @@ func make_voxel_plane(corner: Vector3 = Vector3(-20, 3, -20), side: int=50, voxe
 func _ready() -> void:
 	print("Build World scale", terrain.global_transform.basis.get_scale().abs())
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	make_voxel_plane(Vector3(-20, 3, -20), 50, 2)
+	make_voxel_plane(Vector3(-20, 0, -20), 50, 2)
 
 	# Example blocky placements (IDs depend on your VoxelLibrary setup):
 	# 1) Cube: 8x8x8 of voxel_id=1 centered at (0, 8, 0)
@@ -1035,7 +1040,150 @@ func _pop_sphere(center: Vector3i, dir: Vector3, block_id: int) -> bool:
 						_pop_voxel_as_rigidbody
 						continue
 	return ok
-func _pop_voxel_sphere_as_rigidbody(origin: Vector3, dir: Vector3, r: int) -> void:
+#func _pop_voxel_sphere_as_rigidbody(origin: Vector3, dir: Vector3, r: int) -> void:
+	#if terrain == null:
+		#return
+	#var cam := get_viewport().get_camera_3d()
+	#if cam == null:
+		#return
+#
+	#var tool := _get_tool()
+	#tool.channel = VoxelBuffer.CHANNEL_TYPE
+	#var hit := tool.raycast(origin, dir, 64)
+	#if hit == null:
+		#return
+#
+	#var vpos: Vector3i = hit.position 
+	#var id := tool.get_voxel(vpos)
+	#if id == 0:
+		#return
+	#
+	#for x in range(vpos.x - r, vpos.x + r + 1):
+		#for y in range(vpos.y - r, vpos.y + r + 1):
+			#for z in range(vpos.z - r, vpos.z + r + 1):
+				#var d := Vector3i(x - vpos.x, y - vpos.y, z - vpos.z)
+				#if d.x*d.x + d.y*d.y + d.z*d.z <= r * r:
+					##ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
+					#var p = Vector3i(x,y,z)
+					#var cur := tool.get_voxel(p)
+					#if cur > 0:
+						#tool.mode = VoxelTool.MODE_SET
+						#tool.set_voxel(p, 0)
+						#
+						#var loose = LooseVoxelScene.instantiate()
+#
+						#var voxel_scale := terrain.global_transform.basis.get_scale().abs()
+						#var scale_factor := voxel_scale.x
+						#
+						#var material: Material = null
+						#var lib: VoxelBlockyLibrary = null
+						#
+						#if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
+							#lib = terrain.mesher.library
+						#print("Library?", lib)
+						#if lib and lib.has_method("get_model"):
+							#var model := lib.get_model(id) 
+								#
+							#if "material_override_0" in model and model.material_override_0 != null:
+									#material = model.material_override_0
+									#print("Got material", material)
+#
+						#
+						#print("Loose is ", loose)
+						#
+						##if loose._mesh_instance == null:
+							##var box_mesh := BoxMesh.new()
+							##box_mesh.size = voxel_scale
+							##loose._mesh_instance = box_mesh
+						#
+						#print("Loose mesh instance is ", loose._mesh_instance)
+						#
+						#if material != null:
+							#print("Valid Material")
+							#loose.set_material(material)
+						##loose.global_basis.basis.scaled(voxel_scale)
+						#loose.set_size(voxel_scale)
+#
+						#var voxel_center_local := Vector3(p) + Vector3(0.5, 0.5, 0.5)
+						#var world_pos := terrain.to_global(voxel_center_local)
+						#
+						##rb.scale = voxel_scale
+						#
+						#loose.origin = world_pos
+						##rb.global_transform.origin = world_pos
+						#var impulse_strength := 2.0 
+						#loose.set_velocity(-dir.normalized() * impulse_strength)
+						#get_parent().add_child(loose)
+#
+						##var rb := RigidBody3D.new()
+						##rb.freeze = false
+						##rb.mass = 1.0
+						##rb.linear_damp = 0.05
+						##rb.angular_damp = 0.05
+						###rb.gravity_scale = 0.0
+##
+						##var voxel_scale := terrain.global_transform.basis.get_scale().abs()
+						##var scale_factor := voxel_scale.x
+						##
+						##var mesh: Mesh = null
+						##var material: Material = null
+						##var lib: VoxelBlockyLibrary = null
+						##
+						##if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
+							##lib = terrain.mesher.library
+						##print("Library?", lib)
+						##if lib and lib.has_method("get_model"):
+							##var model := lib.get_model(id) 
+							##print("Got model", model)
+							##if model and model.has_method("get"):
+								##mesh = model.get("mesh")
+								##print("Got mesh", mesh)
+								##if mesh is ArrayMesh:
+									##var aabb = mesh.get_aabb()
+									##print("Mesh AABB: ", aabb)
+								##
+							##if "material_override_0" in model and model.material_override_0 != null:
+									##material = model.material_override_0
+									##print("Got material", material)
+##
+						##mesh = null
+						##if mesh == null:
+							##print("Fallback mesh")
+							##var box_mesh := BoxMesh.new()
+							##box_mesh.size = voxel_scale
+							##mesh = box_mesh
+						##
+						##var mi := MeshInstance3D.new()
+						##mi.mesh = mesh
+						##if material != null:
+							##print("Valid Material")
+							##mi.material_override = material
+						##rb.add_child(mi)
+##
+						##var shape: Shape3D = null
+						##if mesh is ArrayMesh or mesh is Mesh:
+							##shape = mesh.create_convex_shape()
+						##if shape == null:
+							##print("No ArrayMesh")
+							##var bs := BoxShape3D.new()
+							##bs.size = voxel_scale
+							##shape = bs
+						##var cs := CollisionShape3D.new()
+						##cs.shape = shape
+						##rb.add_child(cs)
+##
+						##var voxel_center_local := Vector3(p) + Vector3(0.5, 0.5, 0.5)
+						##var world_pos := terrain.to_global(voxel_center_local)
+						##
+						##rb.scale = voxel_scale
+						##
+						##get_tree().current_scene.add_child(rb)
+						##rb.global_transform.origin = world_pos
+						###var impulse_strength := 2.0 * scale_factor  # Scale impulse with voxel size
+						##var impulse_strength := 2.0 
+						##rb.apply_impulse(-dir.normalized() * impulse_strength, Vector3.ZERO)
+
+func _pop_voxel_sphere_as_rigidbody(origin: Vector3, dir: Vector3, r: int, impulse: float) -> void:
 	if terrain == null:
 		return
 	var cam := get_viewport().get_camera_3d()
@@ -1053,86 +1201,93 @@ func _pop_voxel_sphere_as_rigidbody(origin: Vector3, dir: Vector3, r: int) -> vo
 	if id == 0:
 		return
 	
+	var r2 = r * r
 	for x in range(vpos.x - r, vpos.x + r + 1):
 		for y in range(vpos.y - r, vpos.y + r + 1):
 			for z in range(vpos.z - r, vpos.z + r + 1):
 				var d := Vector3i(x - vpos.x, y - vpos.y, z - vpos.z)
-				if d.x*d.x + d.y*d.y + d.z*d.z <= r * r:
-					#ok = _set_block(Vector3i(x,y,z), block_id, override_voxels) and ok
-					var p = Vector3i(x,y,z)
+				if d.x*d.x + d.y*d.y + d.z*d.z <= r2:
+					var p = Vector3i(x, y, z)
 					var cur := tool.get_voxel(p)
 					if cur > 0:
-						tool.mode = VoxelTool.MODE_SET
-						tool.set_voxel(p, 0)
+						_spawn_loose_voxel(p, cur, tool, dir, impulse)
 
-						var rb := RigidBody3D.new()
-						rb.freeze = false
-						rb.mass = 1.0
-						rb.linear_damp = 0.05
-						rb.angular_damp = 0.05
-						#rb.gravity_scale = 0.0
+func _spawn_loose_voxel(vpos: Vector3i, voxel_id: int, tool: VoxelTool, dir: Vector3, impulse: float) -> void:
+	tool.mode = VoxelTool.MODE_SET
+	tool.set_voxel(vpos, 0)
+	
+	var loose = LooseVoxelScene.instantiate()
+	
+	var voxel_scale := terrain.global_transform.basis.get_scale().abs()
+	var material: Material = null
+	var lib: VoxelBlockyLibrary = null
+	
+	if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
+		lib = terrain.mesher.library
+	
+	if lib and lib.has_method("get_model"):
+		var model := lib.get_model(voxel_id)
+		if model and "material_override_0" in model and model.material_override_0 != null:
+			material = model.material_override_0
+			
+	add_child(loose)
+	
+	if loose.has_signal("collected"):
+		loose.collected.connect(_on_voxel_collected)
+	
+	if material != null:
+		loose.set_material(material)
+	loose.set_size(voxel_scale)
+	
+	# Position it at the voxel center
+	var voxel_center_local := Vector3(vpos) + Vector3(0.5, 0.5, 0.5)
+	var world_pos := terrain.to_global(voxel_center_local)
+	
+	#get_tree().current_scene.add_child(loose)
+	
+	#loose.global_position = world_pos
+	loose.global_transform.origin = world_pos
+	
+	#loose.apply_central_impulse(-dir.normalized() * impulse_strength)
+	loose.apply_impulse(-dir.normalized() * impulse, Vector3.ZERO)
+	
+	# Add to scene and track it
+	#get_tree().current_scene.add_child(loose)
+	_loose_voxels.append(loose)
+	
+	# Clean up dead references
+	_loose_voxels = _loose_voxels.filter(func(v): return is_instance_valid(v))
 
-						var voxel_scale := terrain.global_transform.basis.get_scale().abs()
-						var scale_factor := voxel_scale.x
-						
-						var mesh: Mesh = null
-						var material: Material = null
-						var lib: VoxelBlockyLibrary = null
-						
-						if "mesher" in terrain and terrain.mesher and "library" in terrain.mesher:
-							lib = terrain.mesher.library
-						print("Library?", lib)
-						if lib and lib.has_method("get_model"):
-							var model := lib.get_model(id) 
-							print("Got model", model)
-							if model and model.has_method("get"):
-								mesh = model.get("mesh")
-								print("Got mesh", mesh)
-								if mesh is ArrayMesh:
-									var aabb = mesh.get_aabb()
-									print("Mesh AABB: ", aabb)
-								
-							if "material_override_0" in model and model.material_override_0 != null:
-									material = model.material_override_0
-									print("Got material", material)
+func _on_voxel_collected(value: int) -> void:
+	#print("Collected Voxel")
+	if test_character.has_method("add_score"):
+		test_character.add_score(value)
+		print("Player received %d points!" % value)
+		return
+	for node in test_character.get_children():
+		if node.has_method("add_score"):
+			node.add_score(value)
+			print("Player received %d points!" % value)
+			break
 
-						mesh = null
-						if mesh == null:
-							print("Fallback mesh")
-							var box_mesh := BoxMesh.new()
-							box_mesh.size = voxel_scale
-							mesh = box_mesh
-						
-						var mi := MeshInstance3D.new()
-						mi.mesh = mesh
-						if material != null:
-							print("Valid Material")
-							mi.material_override = material
-						rb.add_child(mi)
+func clean_loose_voxels() -> void:
+	for voxel in _loose_voxels:
+		if is_instance_valid(voxel) and voxel.has_method("clean"):
+			voxel.clean()
+func update_vacuum_target(target_pos: Vector3) -> void:
+	for voxel in _loose_voxels:
+		if is_instance_valid(voxel) and voxel.has_method("update_vacuum_target"):
+			voxel.update_vacuum_target(target_pos)
+			
+func vacuum_loose_voxels(target_pos: Vector3) -> void:
+	for voxel in _loose_voxels:
+		if is_instance_valid(voxel) and voxel.has_method("start_vacuum"):
+			voxel.start_vacuum(target_pos)
 
-						var shape: Shape3D = null
-						if mesh is ArrayMesh or mesh is Mesh:
-							shape = mesh.create_convex_shape()
-						if shape == null:
-							print("No ArrayMesh")
-							var bs := BoxShape3D.new()
-							bs.size = voxel_scale
-							shape = bs
-						var cs := CollisionShape3D.new()
-						cs.shape = shape
-						rb.add_child(cs)
-
-						var voxel_center_local := Vector3(p) + Vector3(0.5, 0.5, 0.5)
-						var world_pos := terrain.to_global(voxel_center_local)
-						
-						rb.scale = voxel_scale
-						
-						get_tree().current_scene.add_child(rb)
-						rb.global_transform.origin = world_pos
-						#var impulse_strength := 2.0 * scale_factor  # Scale impulse with voxel size
-						var impulse_strength := 2.0 
-						rb.apply_impulse(-dir.normalized() * impulse_strength, Vector3.ZERO)
-
+func stop_vacuum_loose_voxels() -> void:
+	for voxel in _loose_voxels:
+		if is_instance_valid(voxel) and voxel.has_method("stop_vacuum"):
+			voxel.stop_vacuum()
 
 func _pop_voxel_as_rigidbody(origin: Vector3, dir: Vector3) -> void:
 	if terrain == null:

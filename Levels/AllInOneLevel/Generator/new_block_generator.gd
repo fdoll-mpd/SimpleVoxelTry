@@ -17,9 +17,12 @@ const Grass_Green := {"light": 47, "normal": 46, "dark": 45}
 
 const TYPE_CH := VoxelBuffer.CHANNEL_TYPE
 
-@export var SURFACE_Y := 64  
-@export var GRASS_DEPTH := 2   
-@export var DIRT_DEPTH := 15                 
+#@export var SURFACE_Y := 64  
+#@export var GRASS_DEPTH := 2   
+#@export var DIRT_DEPTH := 15     
+@export var SURFACE_Y := 0  
+@export var GRASS_DEPTH := 4   
+@export var DIRT_DEPTH := 15                     
 @export var grass_is_green := true           
 @export var enable_wall := true
 @export var wall_size := Vector3i(10, 20, 40) 

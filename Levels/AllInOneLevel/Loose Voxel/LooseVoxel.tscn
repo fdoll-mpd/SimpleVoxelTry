@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://chokoenoke13f"]
+
+[ext_resource type="Script" uid="uid://ce74280jvifk8" path="res://Levels/AllInOneLevel/Loose Voxel/loose_voxel.gd" id="1_qux58"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qux58"]
+
+[node name="LooseVoxel" type="RigidBody3D"]
+script = ExtResource("1_qux58")
+
+[node name="CollisionShape" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_qux58")
+
+[node name="MeshInstance" type="MeshInstance3D" parent="."]

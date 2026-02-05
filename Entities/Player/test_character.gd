@@ -20,6 +20,9 @@ const Util = preload("res://CopyFrom/common/util.gd")
 @onready var _hotbar : Hotbar = get_node("./Hotbar")
 
 @export var cursor_material : Material
+var _player_score: int = 0
+var _is_vacuuming: bool = false
+
 var _cursor : MeshInstance3D = null
 
 const SPEED := 5.0
@@ -157,7 +160,9 @@ func _on_ui_config_changed(cfg: Dictionary) -> void:
 
 
 func _physics_process(delta: float) -> void:
-
+	if _is_vacuuming and world_builder != null and world_builder.has_method("update_vacuum_target"):
+		var vacuum_target = eye_camera.global_transform.origin
+		world_builder.update_vacuum_target(vacuum_target)
 		
 	if not is_on_floor():
 		if flying:
@@ -202,10 +207,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		if block_place_debug.is_visible():
 			return
-		var relative = event.relative * mouse_sensitivity
-		head.rotate_y(-relative.x)
-		eye_camera.rotate_x(-relative.y)
-		eye_camera.rotation.x = clamp(eye_camera.rotation.x, deg_to_rad(-80), deg_to_rad(80))
+		#var relative = event.relative * mouse_sensitivity
+		#head.rotate_y(-relative.x)
+		#eye_camera.rotate_x(-relative.y)
+		#eye_camera.rotation.x = clamp(eye_camera.rotation.x, deg_to_rad(-80), deg_to_rad(80))
 		
 	#if event is InputEventMouseButton  and event.button_index == MOUSE_BUTTON_MIDDLE and event.pressed:
 		#_pop_voxel_as_rigidbody(event.position)
@@ -248,9 +253,30 @@ func _unhandled_input(event: InputEvent) -> void:
 				_last_ray_success = false
 				_last_ray_hit = Vector3.ZERO
 				_last_action = "No valid surface hit"
-
+	if event is InputEventKey:
+		
+		if event.keycode == KEY_I:
+			if world_builder != null and world_builder.has_method("clean_loose_voxels"):
+				world_builder.clean_loose_voxels()
+		if event.keycode == KEY_O:
+			if world_builder != null and world_builder.has_method("vacuum_loose_voxels"):
+				if event.pressed:
+					# Start vacuuming to camera position
+					_is_vacuuming = true
+					var vacuum_target = eye_camera.global_transform.origin
+					world_builder.vacuum_loose_voxels(vacuum_target)
+					_last_action = "Vacuum started"
+					_last_toggles = "Vacuuming loose voxels"
+				else:
+					# Stop vacuuming when key released
+					_is_vacuuming = false
+					world_builder.stop_vacuum_loose_voxels()
+					_last_action = "Vacuum stopped"
+					_last_toggles = "Stopped vacuuming"
+					
 	# Hotkey structure placement (raycast-based)
 	if event is InputEventKey and event.pressed:
+		
 		if _hotbar_keys.has(event.keycode):
 			var slot_index = _hotbar_keys[event.keycode]
 			_hotbar.select_slot(slot_index)
@@ -272,7 +298,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			#origin, dir
 			#_pop_voxel_as_rigidbody(event.position)
 			#world_builder._pop_voxel_as_rigidbody(origin, dir)
-			world_builder._pop_voxel_sphere_as_rigidbody(origin, dir, 2)
+			world_builder._pop_voxel_sphere_as_rigidbody(origin, dir, 2, 1)
+		
+		if event.keycode == KEY_L:
+			var origin: Vector3 = eye_camera.global_transform.origin
+			var dir: Vector3 = -eye_camera.global_transform.basis.z
+			var horizontal_dir = Vector2(dir.x, dir.z).normalized()
+			world_builder._pop_voxel_sphere_as_rigidbody(origin, dir, 5, 5)
 				
 		var structure_type = ""
 		var structure_name = ""
@@ -398,6 +430,7 @@ func _update_debug_hud(_delta: float) -> void:
 
 	_hud_label.text = ""
 	_hud_label.text += "[STATE]\n"
+	_hud_label.text += "  SCORE: %d\n" % _player_score 
 	_hud_label.text += "  flying: %s    move_faster: %s\n" % [str(flying), str(move_faster)]
 	_hud_label.text += "  gravity: %s   \n" % str(get_gravity())
 	_hud_label.text += "  pos: (%.2f, %.2f, %.2f)\n" % [pos.x, pos.y, pos.z]
@@ -438,5 +471,10 @@ func _update_debug_hud(_delta: float) -> void:
 func _on_inventory_changed() -> void:
 	pass # Replace with function body.
 	
+
+func add_score(addition: float):
+	_player_score += addition
 	
+func remove_score(subtraction: float):
+	_player_score -= subtraction
 	
